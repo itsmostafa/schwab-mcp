@@ -29,3 +29,16 @@ N is an odd integer within the range [1..1,000,000];
 each element of array A is an integer within the range [1..1,000,000,000];
 all but one of the values in A occur an even number of times.
 '''
+
+def solution(A):
+  result = 0
+  for element in A:
+    result = result ^ element
+  return result
+
+## Tests
+list_1 = [9, 3, 9, 3, 9, 7, 9]
+print(solution(list_1))
+
+list_2 = [11, 7, 11, 9, 11, 7, 11]
+print(solution(list_2))
