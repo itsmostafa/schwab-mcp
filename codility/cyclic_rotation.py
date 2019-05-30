@@ -36,3 +36,28 @@ N and K are integers within the range [0..100];
 each element of array A is an integer within the range [−1,000..1,000].
 In your solution, focus on correctness. The performance of your solution will not be the focus of the assessment.
 '''
+
+
+def solution(A, k):
+    if len(A) == 0:
+        return A
+    else:
+        k = -k % len(A)
+        result = A[k:] + A[:k]
+        return result
+
+## Tests
+list_1 = [1, 2, 3, 4, 5]
+print(solution(list_1, 2))
+
+list_2 = [7, 6, 5, 4, 3]
+print(solution(list_2, 1))
+
+list_3 = [3, 8, 9, 7, 6]
+print(solution(list_3, 9))
+
+list_4 = [-1, -2, -3, -4, -5]
+print(solution(list_4, 3))
+
+list_5 = []
+print(solution(list_5, 1))
