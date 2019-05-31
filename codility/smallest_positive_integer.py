@@ -17,35 +17,63 @@ N is an integer within the range [1..100,000];
 each element of array A is an integer within the range [−1,000,000..1,000,000].
 '''
 
+# def solution(A):
+#     if not A:
+#         return 1
+#     for index, value in enumerate(A):
+#         if len(A) < value <= 0:
+#             continue
+#         while index + 1 != A[index] and 0 < A[index] <= len(A):
+#             v = A[index]
+#             A[index], A[v-1] = A[v-1], A[index]
+#             A[v-1] = v
+
+#             if A[index] == A[v-1]:
+#                 break
+
+#     for index, value in enumerate(A, 1):
+#         if value != index:
+#             return index
+#     return len(A) + 1
+
+
 def solution(A):
-    if not A:
+    final_list = []
+    for i, x in enumerate(list(set(A)) + [None], 1):
+        if i != x:
+            final_list.append(i)
+    if len(final_list) == 0:
         return 1
-    for index, value in enumerate(A):
-        if len(A) < value <= 0:
-            continue
-        while index + 1 != A[index] and 0 < A[index] <= len(A):
-            v = A[index]
-            A[index], A[v-1] = A[v-1], A[index]
-            A[v-1] = v
-
-            if A[index] == A[v-1]:
-                break
-
-    for index, value in enumerate(A, 1):
-        if value != index:
-            return index
-    return len(A) + 1
-
+    else:
+        return min(final_list)
 
 ## Tests
 list_1 = [1, 2, 9, 3, 9, 7, 9]
-print(solution(list_1))
+print(1, solution(list_1))
 
 list_2 = [11, 7, 11, 9, 4, 5, 1]
-print(solution(list_2))
+print(2, solution(list_2))
 
-list_3 = [-3, -5, -7, -8, -9, 1]
-print(solution(list_3))
+list_3 = [-3, -5, -7, -8, -9, -1]
+print(3, solution(list_3))
 
 list_4 = []
-print(solution(list_4))
+print(4, solution(list_4))
+
+list_5 = [1, 1, 1, 1, 1]
+print(5, solution(list_5))
+
+list_6 =[0, 0, 0]
+print(6, solution(list_6))
+
+list_7 = [1]
+print(7, solution(list_7))
+
+list_8 = [0, 0, 2]
+print(8, solution(list_8))
+
+list_9 = [93, 1, 85, 1, 103, 166]
+print(9, solution(list_9))
+
+list_10 = [1, 3, 6, 4, 1, 2]
+print(10, solution(list_10))

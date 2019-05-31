@@ -24,3 +24,18 @@ Write an efficient algorithm for the following assumptions:
 X, Y and D are integers within the range [1..1,000,000,000];
 X ≤ Y.
 '''
+
+
+def solution(X, Y, D):
+    number_of_jumps = abs(int((Y-X)/D))
+    # 75 < 60
+    if (Y-X) > (number_of_jumps*D):
+      return number_of_jumps + 1
+    else:
+      return number_of_jumps
+
+
+## Tests
+print(solution(10, 20, 5))
+print(solution(10, 85, 30))
+print(solution(-5, 65, 10))
