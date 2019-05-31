@@ -1,10 +1,11 @@
 # Python practice notes
 
 #### Resources used:
-- Codility
+- Codility practice questions
   - app.codility.com
 
-- Mastering Python
-  - White, Micheal B. Mastering Python: Machine Learning, Data Structures, Django, Object Oriented Programming (Including Programming Interview Questions)
+- Fluent Python
+  - Ramalho, Lucanio. Fluent Python: Clear, Concise, and Effective Programming
+
 - Python Tricks
   - Bader, Dan. Python Tricks: A Buffet of Awesome Python Features
