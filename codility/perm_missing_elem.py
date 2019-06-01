@@ -29,10 +29,10 @@ def solution(A):
     return int(length*(1+length)/2 - sum(A))
 
 # Tests
-list_1 = [1, 2, 2, 3, 5, 6, 6]
+list_1 = [1, 2, 3, 4, 6]
 print(solution(list_1))
 
-list_2 = [7, 9, 8, 5, 7, 4]
+list_2 = [13, 14, 17, 16, 19]
 print(solution(list_2))
 
 list_3 = [2]
