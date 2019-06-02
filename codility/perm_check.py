@@ -47,9 +47,16 @@ each element of array A is an integer within the range [1..1,000,000,000]
 
 
 def solution(A):
-    return A
+    result = 1
+    for index, value in enumerate(sorted(A), 1):
+        if index != value:
+            result = 0
+    return result
 
 
 # Tests
 list_1 = [4, 1, 3, 2]
 print(solution(list_1))
+
+list_2 = [4, 1, 3]
+print(solution(list_2))
