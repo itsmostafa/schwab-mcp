@@ -17,26 +17,6 @@ N is an integer within the range [1..100,000];
 each element of array A is an integer within the range [−1,000,000..1,000,000].
 '''
 
-# def solution(A):
-#     if not A:
-#         return 1
-#     for index, value in enumerate(A):
-#         if len(A) < value <= 0:
-#             continue
-#         while index + 1 != A[index] and 0 < A[index] <= len(A):
-#             v = A[index]
-#             A[index], A[v-1] = A[v-1], A[index]
-#             A[v-1] = v
-
-#             if A[index] == A[v-1]:
-#                 break
-
-#     for index, value in enumerate(A, 1):
-#         if value != index:
-#             return index
-#     return len(A) + 1
-
-
 def solution(A):
     final_list = []
     for i, x in enumerate(list(set(A)) + [None], 1):
