@@ -40,3 +40,49 @@ Write an efficient algorithm for the following assumptions:
 N is an integer within the range [2..100,000];
 each element of array A is an integer within the range [−1,000..1,000]
 '''
+
+
+def solution(A):
+    sum_of_A = sum(A)
+    sum_of_left_side = 0
+    differences = []
+    result = 0
+    for i in A:
+        sum_of_left_side += i
+        differences.append(abs(sum_of_left_side-(sum_of_A-sum_of_left_side)))
+
+    result = min(differences[:-1])
+
+    return result
+
+
+## Tests
+list_1 = [3, 1, 2, 4, 3]
+print(solution(list_1))
+
+list_2 = [11, 7, 11, 9, 4, 5, 1]
+print(solution(list_2))
+
+list_3 = [-3, -5, -7, -8, -9, -1]
+print(solution(list_3))
+
+list_4 = [5, 6, 30]
+print(solution(list_4))
+
+list_5 = [1, 1, 1, 1, 1]
+print(solution(list_5))
+
+list_6 =[0, 0, 0]
+print(solution(list_6))
+
+list_7 = [1, 2]
+print(solution(list_7))
+
+list_8 = [0, 0, 2]
+print(solution(list_8))
+
+list_9 = [93, 1, 85, 1, 103, 166]
+print(solution(list_9))
+
+list_10 = [1, 3, 6, 4, 1, 2]
+print(solution(list_10))
