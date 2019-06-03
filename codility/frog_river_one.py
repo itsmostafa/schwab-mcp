@@ -43,8 +43,33 @@ N and X are integers within the range [1..100,000];
 each element of array A is an integer within the range [1..X].
 '''
 
-def solution(X, A):
-    pass
+# def solution(X, A):
+#     time = -1
+#     for index, value in enumerate(sorted(list(set(A))), 1):
+#         if index != value:
+#             pass
+#         elif X in A:
+#             time = A.index(X)
+#     return time
 
+def solution(A, X):
+    time = -1
+    for index, each_value in enumerate(A):
+        if each_value == X:
+            if range(1, each_value) in X[0:index]:
+                time = index
+                break
+    return time
 
 # Tests
+list_1 =  [1, 3, 1, 4, 2, 3, 5, 4]
+x_1 = 5
+print(solution(x_1, list_1))
+
+list_2 =  [2, 2, 2, 2, 2]
+x_2 = 2
+print(solution(x_2, list_2))
+
+list_3 =  [1, 2, 3, 5, 3, 1]
+x_3 = 5
+print(solution(x_3, list_3))
