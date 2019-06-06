@@ -44,14 +44,28 @@ each element of array A is an integer within the range [1..X].
 '''
 
 def solution(X, A):
-	time = -1
-	new_list = []
+	new_list = [0]*X
 	for i, v in enumerate(A):
-		new_list.append(v)
+		new_list[i]+=1
+		import ipdb; ipdb.set_trace()
 		if sorted(set(new_list))==list(range(1, max(A)+1)) and X in A:
-			time = i
+			return i
 			break
-	return time
+	return -1
+
+
+# def solution(X, A):
+
+#     count = [0]*X
+#     tot_sum = X*(X+1)/2
+#     each_sum = 0
+#     for i in range(len(A)):
+#         if count[A[i]-1]==0:
+#             count[A[i]-1]+=1
+#             each_sum +=A[i]
+#             if each_sum == tot_sum:
+#                 return i
+#     return -1
 
 # Tests
 list_1 =  [1, 3, 1, 4, 2, 3, 5, 4]
