@@ -14,7 +14,7 @@ Write a function:
 
 that, given two integers U, L, and an array C of N integers, as described above,
 returns a string describing the matrix M in the following format. The first part
-of the string shouldbe the description of the upper row (N characters: 0 or 1),
+of the string should be the description of the upper row (N characters: 0 or 1),
 then there should comma (,), and finally there should be the description of the lower row
 (N characters: 0 or 1)
 The output string should not contain any whitespace.
