@@ -4,8 +4,8 @@
 - Codility practice questions
   - app.codility.com
 
-- Fluent Python
-  - Ramalho, Lucanio. Fluent Python: Clear, Concise, and Effective Programming
+- Python Apprentice
+  - Robert Smallshire and Austin Bingham. The Python Apprentice (Kindle Location 931). 
 
 - Python Tricks
   - Bader, Dan. Python Tricks: A Buffet of Awesome Python Features
