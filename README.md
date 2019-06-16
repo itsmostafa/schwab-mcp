@@ -1,4 +1,4 @@
-# Python practice notes
+# Programming practice
 
 #### Resources used:
 - Codility practice questions
