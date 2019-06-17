@@ -186,3 +186,23 @@ function plusMinus(arr) {
     console.log((1 - lenPlus - lenMinus).toFixed(6));
 }
 ```
+
+### 7. Staircase
+
+```
+def staircase(n):
+    ret = '#'*n
+    for i in range(1, n+1):
+        print(' '*(n-i) + ret[:i])
+```
+
+```
+function staircase(n) {
+    var ret = "#".repeat(n);
+    for (var i = 1; i <= n; i++){
+        console.log(' '.repeat(n-i) + ret.substring(0, i));
+    }
+}
+```
+
+### 8. Mini-Max Sum
