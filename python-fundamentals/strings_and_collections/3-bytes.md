@@ -40,4 +40,4 @@ For now, it's sufficient to recognize bytes literals and understand that they su
     - Windows-1251
     - [List of Codecs supported](https://docs.python.org/3/library/codecs.html#standard-encodings)
 
-In Python we can *encode* a Unicode `str` into a `bytes` object and vice versa, we can *decode* a `bytes` object into a Unicode `str`.
+In Python we can *encode* a Unicode `str` into a `bytes` object and vice versa, we cban *decode* a `bytes` object into a Unicode `str`.
