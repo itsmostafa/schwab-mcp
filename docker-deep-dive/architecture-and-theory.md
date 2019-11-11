@@ -19,3 +19,14 @@
 
 ## Docker Engine
 - a lightweight and powerful open source containerization technology combined with a work flow for building and containerizing your applications.
+- A docker engine contains:
+  - Client
+    - Takes docker commands and creates api endpoints in the daemon
+  - Daemon
+    - Docker's Rest API
+  - Containerd
+    - A daemon process
+    - Execution / lifecycle
+  - OCI layer
+    - Runtime
+    - Creates containers
