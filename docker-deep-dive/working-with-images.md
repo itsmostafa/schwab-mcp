@@ -37,3 +37,15 @@ You can pull a specific image by specifying:
 - Registry / Repo / Image : (Tag)
 - For example:
   - `docker image pull docker.io/redis:4.0.1`
+
+Push an image to a registry
+- `docker image push`
+
+Pull an image from a registry
+- `docker image pull`
+
+View image config including layer data
+- `docker image inspect`
+
+Remove old images
+- `docker image rm`
