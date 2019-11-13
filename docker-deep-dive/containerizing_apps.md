@@ -27,3 +27,11 @@ Build context
 - Can be a remote git repo
 
 When running `docker image build`, whatever is in there gets sent to the daemon and gets processed in the build.
+
+### Multi-stage Builds
+
+Smaller images with minimal OS and packages are better for faster builds, security and deployments
+
+- Pull multiple images into one Dockerfile
+- Create instructions for each build image
+- Can copy code from previous image builds
