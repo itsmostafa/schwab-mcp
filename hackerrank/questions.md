@@ -206,3 +206,14 @@ function staircase(n) {
 ```
 
 ### 8. Mini-Max Sum
+```
+def miniMaxSum(arr):
+    min_sum = 0
+    max_sum = 0
+    sums = []
+    for i in range(len(arr)):
+        new_arr = (arr[i-1:] + arr[:i-1])[:-1]
+        sums.append(sum(new_arr))
+
+    print(min(sums), max(sums))
+```
