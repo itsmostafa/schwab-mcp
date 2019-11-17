@@ -24,7 +24,7 @@ For now, it's sufficient to recognize bytes literals and understand that they su
 `str`, such as indexing and splitting: 
 
 ```
->>> d = b 'some bytes'
+>>> d = b'some bytes'
 >>> d.split()
 [ b 'some' , b 'bytes' ] 
 ```
