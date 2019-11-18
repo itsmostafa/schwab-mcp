@@ -19,3 +19,40 @@
 
 ## Diving Deeper
 
+To log in to a container:
+    - `docker container run -it {IMAGE_NAME} sh`
+- To stop a container:
+    - `docker container stop {PART_OF_THE_CONTAINER_ID}`
+- List all containers:
+    - `docker container ls -a`
+- Run commands within container:
+    - `docker container exec {PART OF CONTAINER ID} {COMMAND}`
+
+## Logging
+- Daemon logs
+    - systemd:
+        - `journalctl -u docker.service`
+    - Non-systemd:
+        - `cd /var/log/messages`
+
+- Container logs
+    - STDOUT
+        - command for normal outputs
+    - STDERR
+        - command to output error messages
+
+One can plugin to a logging solution using the `daemon.json` logging driver.
+
+Override per-container with `--log-driver --log-opts`
+
+Inspect logs with `docker logs <container>`
+    - Doesn't work with all drivers
+
+
+## Recap
+- Containers are run-time cousins of images
+- Containers look and feel like a standard OS
+- Containers don't contain a kernal, must communicate with kernal of the host.
+- Containers are Read/Write layers. Images are Read-Only layers.
+- Once containers are deployed, leave them alone, if need to be fixed, replace with a new container. No need to login and modify.
+- Ability to plugin a logging system
