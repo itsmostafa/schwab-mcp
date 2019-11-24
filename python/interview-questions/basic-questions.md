@@ -1,6 +1,6 @@
 # Python Basic Questions
 
-1. #### What is Python and what are its key features?
+1. ### What is Python and what are its key features?
 
 - Python is an interpretive computer programming language, both object-oriented and interactive, and used for scripting. It is designed as the most readable computer language in the world.
 - Its key features are:
@@ -8,13 +8,14 @@
   - It is a dynamically-typed language and this means there is no need to define datatypes for the variables you declare, or anything else for that matter.  For example, a variable called x=10 can be declared, followed by x=”Hello World” and, providing there are no errors, the datatype will be defined as per the value.
   - Python functions are first-class objects.
   - Python may be used for many applications, cross-platform, including web applications, big data applications, scientific models, and a whole lot more.
+  - It contains objects, modules, threads, exceptions and automatic memory management.
 
-2. #### What is the difference between a List and a Tuple?
+2. ### What is the difference between a List and a Tuple?
 - The main difference between lists and a tuples is the fact that lists are mutable whereas tuples are immutable.
 - A mutable data type means that a python object of this type can be modified.
 - An immutable object can’t be modified.
 
-3. #### What operator types does Python use?
+3. ### What operator types does Python use?
 
 - Arithmetic operators:
     - Addition (+)
@@ -50,31 +51,25 @@
 
 - Bitwise operators
 
-4. #### What is the maximum length a Python Identifier can be?
+4. ### What is PEP-8
 
-- 79 characters based on PEP-8 standards
+- PEP 8 is a coding convention, a set of recommendation, about how to write your Python code more readable
 
-5. #### What are Python Decorators?
+5. ### What is pickling and unpickling?
 
-- A callable object that is used to modify a function or a class.
-- It allows us to wrap another function in order to extend the behavior of the wrapped function without permanently modifying it.
+- Pickle module accepts any Python object and converts it into a string representation and dumps it into a file by using dump function, this process is called pickling.
+- The process of retrieving original Python objects from the stored string representation is called unpickling.
 
-6. #### What is a Dictionary?
+6. ### How is Python Interpreted?
 
-- An unordered collection of key value pairs.
-- keys of a dictionary must be unique.
+- Python program runs directly from the source code. It converts the source code that is written by the programmer into an intermediate language, which is again translated into machine language that has to be executed.
 
-7. #### What is a Python Memory Management?
+7. ### How is memory managed in Python?
 
-- Involves a private heap containing all python objects and data structures
-- the management of this private heap is ensured internally by the python memory manager
-- The management of the python heap is performed by the interpreter itself and that the user has no control over it, even if they regularly manipulate object pointers to memory blocks inside the heap.
+- Python memory is managed by Python private heap space. All Python objects and data structures are located in a private heap. The programmer does not have an access to this private heap and interpreter takes care of this Python private heap.
+- The allocation of Python heap space for Python objects is done by Python memory manager. The core API gives access to some tools for the programmer to code.
+- Python also have an inbuilt garbage collector, which recycle all the unused memory and frees the memory and makes it available to the heap space.
 
-8. #### Explain Python in one sentence?
+8. ### How are arguments passed by value or by reference?
 
-9. #### Explain Python Interpretation?
-
-10. #### Explain the rules for global and local variables?
-
-11. #### How are global values shared in Python?
-12. #### How are Keyword or Optional Parameters passed between functions in Python?
+- Everything in Python is an object and all variables hold references to the objects. The references values are according to the functions; as a result you cannot change the value of the references. However, you can change the objects if it is mutable.
