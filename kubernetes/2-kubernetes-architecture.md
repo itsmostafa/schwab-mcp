@@ -89,3 +89,24 @@ Deploying Pods
     - by giving the apiserver a pod manifest file
     - via a replication controller
         - deploying multiple replicas of a single pod defintion and that they are always running.
+
+## Services
+
+- Services:
+    - A high level, stable abstration point for multiple pods and provide load balancing
+    - A k8 object that's defined with a manifest and provides a stable IP address and DNS name.
+    - solve the problem of unreliable pod IP addresses as they pods get created with a new IP everytime.
+    - updates itself with the new details of new pods
+    - use **labels** that tie services to pods together
+
+Services only communicate to healthy pods. They can be configured for session affinity and point to things outside the cluster.
+
+## Deployments
+
+Clusters are deployed via the apiserver using YAML or JSON
+They provide simple rolling updates and rollbacks capabilities
+YOu can also add features to replication controllers
+
+There are multiple concurrent versions
+    - Blue-green deployments
+    - Canary releases
