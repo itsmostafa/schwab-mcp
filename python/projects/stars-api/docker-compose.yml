@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  db:
+    image: mongo:latest
+    container_name: stars_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  api:
+    container_name: stars_api
+    build:
+      context: .
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+volumes:
+  mongodb_data:

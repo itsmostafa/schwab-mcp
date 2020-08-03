@@ -1,0 +1,21 @@
+{% extends 'plans/base.html' %}
+{% block content %}
+
+<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+  <h1 class="display-4">Nick Fitness</h1>
+  <p class="lead">Fitness Is Fun</p>
+  <a href="{% url 'join' %}"><button type="button" class="btn btn-lg btn-primary">Get Premium</button></a>
+</div>
+
+<div class="container">
+
+  <h3>Trending Articles</h3>
+  <ul>
+    {% for plan in plans.all %}
+
+    <li><a href="{% url 'plan' plan.id %}">{{ plan.title }}</a></li>
+
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
