@@ -1,0 +1,43 @@
+<html>
+    <body>
+        <ul id="GroupBy">
+            <li id="One">
+                <span class="up">up </span>
+                1
+                <span class="down"> down</span>
+                <span class="remove"> remove</span>
+                <input type="hidden" name="weight" value="0">
+            </li>
+            <li id="Two">
+                <span class="up">up </span>
+                2
+                <span class="down"> down</span>
+                <span class="remove"> remove</span>
+                <input type="hidden" name="weight" value="0">
+            </li>
+            <li id="Three">
+                <span class="up">up </span>
+                3
+                <span class="down"> down</span>
+                <span class="remove"> remove</span>
+                <input type="hidden" name="weight" value="0">
+            </li>
+            <li id="Four">
+                <span class="up">up </span>
+                4
+                <span class="down"> down</span>
+                <span class="remove"> remove</span>
+                <input type="hidden" name="weight" value="0">
+            </li>
+        </ul>
+        <template id="litemplate">
+            <span class="up">up </span>
+            {{ number }}
+            <span class="down"> down</span>
+            <span class="remove"> remove</span>
+            <input type="hidden" name="weight" value="0">          
+        </template>
+        <button id="add">Add item</button>
+        <script src="/sortable-formsets.77de5100.js"></script>
+    </body>
+</html>

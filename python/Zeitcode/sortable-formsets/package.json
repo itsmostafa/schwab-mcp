@@ -1,0 +1,19 @@
+{
+  "name": "sortable-formsets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/mustache": "^0.8.32",
+    "mustache": "^3.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.7.3"
+  }
+}
