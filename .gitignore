@@ -1,3 +1,4 @@
 .vscode
 python/flask/.env
 python/flask/__pycache__
+golang/.DS_Store
