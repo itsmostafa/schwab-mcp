@@ -137,18 +137,118 @@
 
 ## Interview Questions
 
-1. How does Gin's router differ from the stdlib `http.ServeMux`, and what advantage does a radix tree give?
-2. What is the difference between `c.ShouldBindJSON` and `c.BindJSON`? Which do you prefer and why?
-3. How does middleware execution work in Gin? What happens when you call `c.Abort()` in the middle of a chain?
-4. Why should you pass `c.Request.Context()` to service-layer functions instead of passing `*gin.Context`?
-5. How would you implement a consistent error response format across all endpoints using Gin middleware?
-6. What is the purpose of `c.Set` / `c.Get`, and when would you use them vs. adding fields to a request-scoped struct?
-7. How do you handle validation errors from `ShouldBind` to return field-level feedback to the client?
-8. How would you version an API using Gin route groups, and how does middleware scoping play into that?
-9. When would you choose stdlib `net/http` over Gin for a new Go service?
-10. How do you implement graceful shutdown when using Gin?
-11. Why should you avoid using `*gin.Context` after the handler returns, and what does `c.Copy()` do?
-12. How would you add a request timeout middleware in Gin that cancels downstream work if the deadline is exceeded?
+1. **How does Gin's router differ from the stdlib `http.ServeMux`, and what advantage does a radix tree give?**
+
+   The stdlib `http.ServeMux` uses a simple map of patterns to handlers. Route matching is linear in the number of registered patterns, it has limited support for path parameters (added in Go 1.22), and earlier versions had no method-based routing at all. Gin uses a radix tree (compressed trie) — one tree per HTTP method. Lookup cost is O(length of the path), not O(number of routes), so it stays fast even with hundreds of endpoints. Path parameters (`:id`) and wildcards (`*filepath`) are parsed during tree traversal with zero allocation. Route conflicts like `/users/:id` vs `/users/new` are caught at registration time rather than causing ambiguous matches at runtime.
+
+2. **What is the difference between `c.ShouldBindJSON` and `c.BindJSON`? Which do you prefer and why?**
+
+   Both decode the JSON request body into a struct and run validation. The difference is how they handle errors. `c.ShouldBindJSON` returns the error for you to handle — you decide the status code, response format, and whether to abort. `c.BindJSON` (a.k.a. `MustBind`) automatically writes a 400 response and calls `c.Abort()` on failure, coupling binding logic to response writing. Prefer `ShouldBindJSON` because it gives you explicit control over error responses — you can return field-level validation details, use a consistent error envelope, or choose a different status code when appropriate.
+
+3. **How does middleware execution work in Gin? What happens when you call `c.Abort()` in the middle of a chain?**
+
+   A route's handler chain is a flat `[]HandlerFunc` slice composed of group middleware + route middleware + the final handler. Execution proceeds left-to-right; each middleware calls `c.Next()` to invoke the next handler, and code after `c.Next()` runs on the way back out (onion model). When `c.Abort()` is called, it sets the handler index past the end of the chain so no subsequent handlers execute. However, the currently-running middleware still finishes its own code (including any post-`c.Next()` logic). `c.Abort()` does **not** panic or return — it only prevents the rest of the chain from being called.
+
+4. **Why should you pass `c.Request.Context()` to service-layer functions instead of passing `*gin.Context`?**
+
+   `*gin.Context` is a Gin-specific type that carries HTTP concerns — response writer, route params, middleware state. Passing it into service or repository layers couples your business logic to the Gin framework, making it harder to test (you'd need to construct a `*gin.Context` in tests) and impossible to reuse with a different HTTP framework or in non-HTTP contexts like CLI tools or workers. `c.Request.Context()` returns a standard `context.Context` that carries deadlines, cancellation signals, and request-scoped values — everything downstream code actually needs. This keeps your architecture layered: handlers depend on Gin, but services depend only on stdlib interfaces.
+
+5. **How would you implement a consistent error response format across all endpoints using Gin middleware?**
+
+   Use the `c.Error(err)` + error-handling middleware pattern. Handlers and service calls append errors via `c.Error(err)` without writing a response themselves. A middleware registered early in the chain (so its post-`c.Next()` code runs last) checks `c.Errors` after all handlers finish. It maps domain errors to HTTP status codes and writes a single, consistent JSON error envelope:
+   ```go
+   func ErrorHandler() gin.HandlerFunc {
+       return func(c *gin.Context) {
+           c.Next()
+           if len(c.Errors) > 0 {
+               err := c.Errors.Last().Err
+               switch {
+               case errors.Is(err, ErrNotFound):
+                   c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+               case errors.Is(err, ErrConflict):
+                   c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+               default:
+                   c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+               }
+           }
+       }
+   }
+   ```
+   This centralizes error-to-HTTP translation, keeps handlers thin, and guarantees every endpoint returns the same error shape.
+
+6. **What is the purpose of `c.Set` / `c.Get`, and when would you use them vs. adding fields to a request-scoped struct?**
+
+   `c.Set(key, value)` and `c.Get(key)` provide a request-scoped key-value store on `*gin.Context`. They're used by middleware to pass data to downstream handlers — e.g., an auth middleware sets the authenticated user, and the handler retrieves it. The values are `any`-typed, so you need type assertions on retrieval (`c.MustGet("user").(User)`). For passing one or two values between middleware and handlers (user identity, request ID, trace context), `c.Set`/`c.Get` is simple and idiomatic. If you have many related values or want type safety without assertions, consider putting a typed struct into `context.WithValue` on the request context, or creating a helper that wraps `c.Get` with a typed return. Avoid using `c.Set`/`c.Get` to pass data into service-layer code — those layers should receive explicit function parameters or a `context.Context`, not depend on Gin's store.
+
+7. **How do you handle validation errors from `ShouldBind` to return field-level feedback to the client?**
+
+   When `ShouldBind*` fails due to validation, the returned error is of type `validator.ValidationErrors` (from `go-playground/validator/v10`). You can type-assert it and iterate over individual `FieldError` values to build a structured response:
+   ```go
+   if err := c.ShouldBindJSON(&req); err != nil {
+       var ve validator.ValidationErrors
+       if errors.As(err, &ve) {
+           fieldErrors := make(map[string]string, len(ve))
+           for _, fe := range ve {
+               fieldErrors[fe.Field()] = fmt.Sprintf("failed on '%s' rule", fe.Tag())
+           }
+           c.JSON(http.StatusBadRequest, gin.H{"errors": fieldErrors})
+           return
+       }
+       // non-validation error (e.g., malformed JSON)
+       c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+       return
+   }
+   ```
+   This gives the client a map of field names to error descriptions (e.g., `{"Name": "failed on 'required' rule", "Email": "failed on 'email' rule"}`), which is much more useful than a single error string.
+
+8. **How would you version an API using Gin route groups, and how does middleware scoping play into that?**
+
+   Create a `RouterGroup` per version with the version prefix:
+   ```go
+   v1 := router.Group("/api/v1")
+   v2 := router.Group("/api/v2")
+   ```
+   Middleware attached to a group only applies to routes within that group (and its nested sub-groups). This lets you evolve middleware independently per version — for example, v1 might use basic auth while v2 uses OAuth, or v2 adds a rate limiter that v1 doesn't have. You can nest further within a version (`v1.Group("/users")`) to scope middleware even more narrowly. Common middleware like recovery and logging goes on the root `Engine` so all versions inherit it, while version-specific concerns attach to the version group.
+
+9. **When would you choose stdlib `net/http` over Gin for a new Go service?**
+
+   Choose stdlib when: you have very few routes and don't need path parameters (or Go 1.22+ pattern matching suffices), the project requires zero third-party dependencies, you're building a proxy or gateway that needs low-level control over connection handling and hijacking, or you want the smallest possible binary (Gin adds ~5 MB). For most CRUD APIs and microservices, Gin's ergonomic wins — route groups, struct binding with validation, middleware chaining — outweigh its minimal overhead. The performance difference between Gin and stdlib is negligible for typical workloads; the choice is about developer productivity and project constraints.
+
+10. **How do you implement graceful shutdown when using Gin?**
+
+    Gin's `Engine` implements `http.Handler`, so graceful shutdown uses the stdlib `http.Server` exactly as you would without Gin:
+    ```go
+    srv := &http.Server{Addr: ":8080", Handler: router}
+    go func() { srv.ListenAndServe() }()
+
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx) // stops accepting new connections, waits for in-flight requests
+    ```
+    `Shutdown` stops the listener, waits for active requests to complete (up to the context deadline), then returns. This lets you drain connections gracefully without dropping in-flight work.
+
+11. **Why should you avoid using `*gin.Context` after the handler returns, and what does `c.Copy()` do?**
+
+    `*gin.Context` is pooled — after the handler returns, the context is reset and returned to a `sync.Pool` for reuse by the next request. If a goroutine still holds a reference to the original `*gin.Context`, it will read/write memory that now belongs to a different request, causing data races and corrupted responses. `c.Copy()` creates a shallow copy of the context that is safe to use in a goroutine. The copy retains the request, keys, and other read-only data, but is detached from the pool lifecycle. Use `c.Copy()` whenever you need to access context data (like `c.GetString("userID")`) inside a goroutine spawned from a handler.
+
+12. **How would you add a request timeout middleware in Gin that cancels downstream work if the deadline is exceeded?**
+
+    Wrap the request's context with `context.WithTimeout` and replace it on the request before calling `c.Next()`:
+    ```go
+    func Timeout(d time.Duration) gin.HandlerFunc {
+        return func(c *gin.Context) {
+            ctx, cancel := context.WithTimeout(c.Request.Context(), d)
+            defer cancel()
+            c.Request = c.Request.WithContext(ctx)
+            c.Next()
+        }
+    }
+    ```
+    Downstream handlers and service-layer code that respect `ctx.Done()` (e.g., database queries, HTTP client calls) will be cancelled when the deadline fires. The middleware itself doesn't write a timeout response — the service call should return a `context.DeadlineExceeded` error, which your error-handling middleware can map to `408` or `504`. Be careful: if the handler has already started writing a response, you can't change the status code, so keep response writes atomic and check the context before writing.
 
 Practice prompt:
 - Build a CRUD API with Gin using route groups (`/api/v1`), struct binding with validation, an error-handling middleware that maps domain errors to HTTP codes, and custom middleware for request logging and auth.
