@@ -1,46 +1,49 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repository is currently documentation-first. The primary project content is in `README.md`, with repository-level settings in `.gitignore`.
+This repository is a Go backend interview-prep workspace, organized by numbered topics and a planned capstone project.
 
-When adding material, keep files focused and easy to scan:
-- Keep interview prep content in Markdown (`*.md`).
-- Use one topic per file when content grows (for example, `go-http.md`, `gorm-notes.md`).
-- Prefer shallow structure unless sections become large.
+- `01-go-fundamentals/` ... `08-kubernetes/`: Topic folders, each with `notes.md`.
+- `project/`: Design and planning for an "Integration Sync Service" practice microservice.
+- Root docs: `README.md` (study flow), `CLAUDE.md` (agent-focused repo context).
+
+Keep topic directories zero-padded and sequential (`01-`, `02-`, etc.) so the learning path stays ordered.
 
 ## Build, Test, and Development Commands
-There is no formal build system configured in this repository yet. Use these commands for day-to-day work:
+There is no build pipeline yet for the notes themselves. Use these commands for contributor workflow:
 
-```bash
-git status              # Check local changes
-git log --oneline -n 10 # Review recent commit style
-rg "Gin|GORM|OTel" .    # Search topic coverage quickly
-```
+- `rg --files`: Quick inventory of tracked content.
+- `rg "TODO|Interview Questions|Resources" 0*-*/notes.md`: Check template sections across topics.
+- `git log --oneline -n 10`: Review recent commit message style.
 
-If available in your environment, run Markdown linting before opening a PR:
+If/when Go code is added under `project/` or topic `examples/` folders:
 
-```bash
-markdownlint "**/*.md"
-```
+- `go test ./...`: Run unit tests.
+- `go fmt ./...`: Apply standard Go formatting.
 
 ## Coding Style & Naming Conventions
-- Use clear, direct technical writing with short paragraphs and bullet lists.
-- Prefer ATX headings (`#`, `##`, `###`) and consistent heading hierarchy.
-- Use fenced code blocks with language hints (for example, ` ```bash `, ` ```go `).
-- File names should be lowercase with hyphens (for example, `otel-tracing.md`).
+For notes and docs:
+
+- Use clear Markdown headings (`#`, `##`) and short bullet lists.
+- Keep each `notes.md` aligned to the same section pattern: `Key Concepts`, `Interview Questions`, `Resources`.
+
+For future Go code:
+
+- Follow standard Go formatting (`gofmt`) and idiomatic naming (`camelCase` locals, `PascalCase` exported identifiers).
+- Prefer small packages under `internal/` for non-public logic.
 
 ## Testing Guidelines
-No automated test suite is currently defined. Validate contributions by:
-- Checking Markdown renders correctly in your editor or GitHub preview.
-- Verifying commands and examples are copy-paste runnable.
-- Re-reading for factual consistency across related notes.
+Current state: no mandatory automated test suite for Markdown notes.
+
+Contributor checks:
+
+- Verify links and Markdown rendering before opening a PR.
+- For new Go examples or project code, include table-driven tests where practical and run `go test ./...`.
 
 ## Commit & Pull Request Guidelines
-Recent history uses short, imperative, lowercase commit messages (for example, `code cleanup`, `add python projects`). Follow that pattern:
-- Keep commit subject concise and action-oriented.
-- Group related documentation updates in one commit.
+Recent history favors short, imperative commit messages (for example: `add golang notes and practice code`, `Remove old study materials...`).
 
-For pull requests:
-- Include a brief summary of what changed and why.
-- List affected files/sections.
-- Link any relevant issue or discussion when applicable.
+- Keep commits focused to one topic or concern.
+- Use imperative subjects and concise scope.
+- In PRs, include: purpose, changed paths (for example `03-gin/notes.md`), and any follow-up TODOs.
+- Link related issues/tasks when applicable.
