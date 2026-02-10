@@ -12,7 +12,7 @@
 
 ## Interview Questions
 
-<!-- Add questions as you study -->
+<!-- Add questions and answers to study -->
 
 ## Resources
 
