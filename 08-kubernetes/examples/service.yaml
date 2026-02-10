@@ -1,0 +1,176 @@
+# =============================================================================
+# Kubernetes Service — sync-service
+# =============================================================================
+# A Service provides a stable network endpoint for a set of Pods.
+# Pods are ephemeral (they come and go), but a Service's ClusterIP and DNS
+# name remain constant, giving clients a reliable way to reach the Pods.
+#
+# Interview key points:
+# - Service is an abstraction over a set of Pods selected by labels
+# - kube-proxy on each node maintains iptables/IPVS rules to route traffic
+# - Services provide load balancing across matching Pods
+# - Service discovery via DNS is provided by CoreDNS (kube-dns)
+# - A Service without a selector creates an Endpoints object manually
+#   (used for external service integration)
+# =============================================================================
+
+apiVersion: v1
+# Services are part of the core API group, so the apiVersion is just "v1".
+# Interview note: core resources (Pod, Service, ConfigMap, Secret, Namespace)
+# use "v1". No group prefix is needed for core resources.
+
+kind: Service
+# A Service defines a logical set of Pods and a policy to access them.
+# Interview note: other networking resources include Ingress (L7 HTTP routing),
+# NetworkPolicy (firewall rules), and EndpointSlice (scalable Endpoints).
+
+metadata:
+  name: sync-service
+  # This name determines the DNS name of the Service.
+  # Interview critical point — DNS resolution within the cluster:
+  #   - Same namespace:    sync-service
+  #   - Cross namespace:   sync-service.default
+  #   - Fully qualified:   sync-service.default.svc.cluster.local
+  #
+  # The FQDN format is: <service-name>.<namespace>.svc.<cluster-domain>
+  # cluster-domain is typically "cluster.local" (configurable).
+  #
+  # Interview note: CoreDNS is the default DNS provider in Kubernetes.
+  # It runs as a Deployment in the kube-system namespace and serves
+  # DNS queries from all Pods via a ClusterIP Service (usually 10.96.0.10).
+
+  namespace: default
+  # Services are namespace-scoped. They can only select Pods within
+  # the same namespace. To route to Pods in another namespace, use
+  # an ExternalName Service or reference the FQDN directly.
+
+  labels:
+    app: sync-service
+  # Labels on the Service itself (not the selector). These can be used
+  # to organize Services or select them in label-based queries.
+
+spec:
+  type: ClusterIP
+  # =======================================================================
+  # Service Types — Interview must-know topic
+  # =======================================================================
+  #
+  # ClusterIP (default):
+  #   - Allocates an internal virtual IP reachable only within the cluster
+  #   - This is the most common type for internal service-to-service communication
+  #   - The ClusterIP is stable for the lifetime of the Service
+  #   - Example: a backend API consumed by other services in the cluster
+  #
+  # NodePort:
+  #   - Exposes the Service on a static port (30000-32767) on every node
+  #   - Creates a ClusterIP automatically (NodePort builds on top of ClusterIP)
+  #   - Accessible from outside the cluster via <NodeIP>:<NodePort>
+  #   - Rarely used directly in production; mostly for development or
+  #     when an external load balancer handles traffic distribution
+  #
+  # LoadBalancer:
+  #   - Provisions a cloud provider's load balancer (AWS ELB/NLB, GCP LB, etc.)
+  #   - Creates NodePort and ClusterIP automatically (builds on both)
+  #   - Most common way to expose services externally in cloud environments
+  #   - Each LoadBalancer Service gets its own external IP (can be expensive)
+  #   - Interview note: for multiple services, prefer Ingress over multiple
+  #     LoadBalancer Services to reduce cost and consolidate routing
+  #
+  # ExternalName:
+  #   - Maps the Service to an external DNS name (CNAME record)
+  #   - No proxying, no ClusterIP — just a DNS alias
+  #   - Example: point "my-database" to "db.prod.example.com"
+  #   - Useful for gradually migrating external services into the cluster
+
+  selector:
+    app: sync-service
+  # =======================================================================
+  # Selector — How Services find their Pods
+  # =======================================================================
+  # The selector matches Pod labels. Only Pods with ALL specified labels
+  # are included in the Service's endpoints.
+  #
+  # Interview note: when a Pod's readiness probe fails, the Pod is removed
+  # from the Service's Endpoints even though it still matches the selector.
+  # The Endpoints controller watches for Pod readiness changes.
+  #
+  # Interview note on the relationship chain:
+  #   Service (selector: app=sync-service)
+  #     -> Endpoints (list of Pod IPs that match the selector AND are ready)
+  #       -> kube-proxy (creates iptables/IPVS rules on each node)
+  #         -> Pod (actual target of the traffic)
+  #
+  # EndpointSlices (Kubernetes 1.21+) replace Endpoints for scalability.
+  # Each EndpointSlice holds up to 100 endpoints by default, avoiding the
+  # performance issue of a single large Endpoints object with thousands of Pods.
+
+  ports:
+    - name: http
+      # Port names are required when a Service exposes multiple ports.
+      # For a single port, the name is optional but recommended for clarity.
+      # Named ports can be referenced by other resources (Ingress, NetworkPolicy).
+
+      port: 80
+      # The port that the Service listens on (the "front door").
+      # Other services connect to sync-service:80.
+      # Interview note: this is the port exposed on the Service's ClusterIP.
+
+      targetPort: http
+      # The port on the Pod to forward traffic to.
+      # Can be a number (8080) or a named port ("http" -> resolves to 8080
+      # from the container's port definition in the Deployment).
+      #
+      # Interview note: using named targetPorts allows you to change the
+      # container port number without updating the Service. The name
+      # reference stays valid as long as the container port name matches.
+
+      protocol: TCP
+      # Protocol: TCP (default), UDP, or SCTP.
+      # Most HTTP/gRPC services use TCP.
+
+  # =======================================================================
+  # Session Affinity (optional, commented out)
+  # =======================================================================
+  # sessionAffinity: ClientIP
+  # sessionAffinityConfig:
+  #   clientIP:
+  #     timeoutSeconds: 10800   # 3 hours
+  #
+  # By default, Services use round-robin load balancing (no affinity).
+  # ClientIP session affinity routes all requests from the same client IP
+  # to the same Pod. Options: None (default) or ClientIP.
+  #
+  # Interview note: for cookie-based session affinity, use an Ingress
+  # controller (e.g., nginx-ingress with sticky sessions annotation).
+
+  # =======================================================================
+  # Headless Service (optional, commented out)
+  # =======================================================================
+  # clusterIP: None
+  #
+  # Setting clusterIP to "None" creates a headless Service.
+  # A headless Service does NOT allocate a ClusterIP.
+  # DNS lookup returns the Pod IPs directly instead of the Service's VIP.
+  #
+  # Interview note: headless Services are used with StatefulSets to give
+  # each Pod a stable DNS name: <pod-name>.<service-name>.<namespace>.svc.cluster.local
+  # Example: postgres-0.postgres.default.svc.cluster.local
+  # This is essential for databases, Kafka brokers, and other stateful workloads
+  # where clients need to connect to a specific Pod.
+
+# =============================================================================
+# Interview deep-dive: How traffic flows through a Service
+# =============================================================================
+#
+# 1. Client Pod sends request to "sync-service:80" (or the ClusterIP)
+# 2. CoreDNS resolves "sync-service" to the Service's ClusterIP (e.g., 10.96.45.12)
+# 3. The request hits the ClusterIP (a virtual IP in iptables/IPVS rules)
+# 4. kube-proxy's rules (on the node) select a backend Pod IP:Port
+#    - iptables mode: random selection using probability chains
+#    - IPVS mode: supports round-robin, least-connection, and other algorithms
+# 5. The packet is DNAT'd (destination NAT) to the selected Pod IP:Port
+# 6. The response follows the reverse path back to the client
+#
+# Interview note: kube-proxy does NOT proxy traffic itself (despite the name).
+# It only programs the kernel's iptables/IPVS rules. Actual traffic flows
+# directly between Pods at the kernel level — no userspace hop.
