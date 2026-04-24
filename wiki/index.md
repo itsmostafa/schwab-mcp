@@ -18,6 +18,7 @@ Master catalog of all pages. Updated on every ingest or major addition.
 
 - [StackExchange API](concepts/stackexchange-api.md) — API v2.3 GET /search reference, auth, pagination, compression, edge cases
 - [Agentic AI](concepts/agentic-ai.md) — Agents, RAG, embeddings, vector DBs, feedback loops, collective intelligence
+- [Tool Calling](concepts/tool-calling.md) — How LLMs invoke external functions; protocol, agent loop, design principles, SOC examples
 - [SOC Domain](concepts/soc-domain.md) — SOC workflows, alert triage, XDR, threat analysis, SIEM
 - [Systems Design Patterns](concepts/systems-design-patterns.md) — Key patterns for the systems design round
 
