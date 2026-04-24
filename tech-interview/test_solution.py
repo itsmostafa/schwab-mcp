@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from solution import search_questions
+from solution import clear_cache, search_questions
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -178,6 +178,70 @@ def test_raises_on_timeout(mock_get):
 def test_raises_on_connection_error(mock_get):
     with pytest.raises(Exception):
         search_questions("foo")
+
+
+# ---------------------------------------------------------------------------
+# Cache isolation
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def reset_cache():
+    clear_cache()
+    yield
+    clear_cache()
+
+
+# ---------------------------------------------------------------------------
+# TTL caching
+# ---------------------------------------------------------------------------
+
+
+@patch("solution.requests.get")
+def test_same_query_uses_cache(mock_get):
+    mock_get.return_value = make_response(items=[SAMPLE_ITEM], has_more=False)
+    result1 = search_questions("foo")
+    result2 = search_questions("foo")
+    assert result1 == result2
+    assert mock_get.call_count == 1
+
+
+@patch("solution.requests.get")
+def test_different_queries_bypass_cache(mock_get):
+    mock_get.return_value = make_response(items=[SAMPLE_ITEM], has_more=False)
+    search_questions("foo")
+    search_questions("bar")
+    assert mock_get.call_count == 2
+
+
+@patch("solution.requests.get")
+def test_different_tags_bypass_cache(mock_get):
+    mock_get.return_value = make_response(items=[SAMPLE_ITEM], has_more=False)
+    search_questions("foo", tagged=["python"])
+    search_questions("foo", tagged=["go"])
+    assert mock_get.call_count == 2
+
+
+@patch("solution.requests.get")
+def test_clear_cache_forces_refetch(mock_get):
+    mock_get.return_value = make_response(items=[SAMPLE_ITEM], has_more=False)
+    search_questions("foo")
+    clear_cache()
+    search_questions("foo")
+    assert mock_get.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Smarter pagination
+# ---------------------------------------------------------------------------
+
+
+@patch("solution.requests.get")
+def test_pagesize_capped_at_25(mock_get):
+    mock_get.return_value = make_response(items=[], has_more=False)
+    search_questions("foo", max_results=100)
+    params = mock_get.call_args[1]["params"]
+    assert params["pagesize"] == 25
 
 
 # ---------------------------------------------------------------------------
