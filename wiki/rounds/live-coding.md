@@ -70,6 +70,14 @@ Ask these questions:
 - Should I handle pagination?
 - Any rate limiting considerations?
 - What language do you prefer / is the team comfortable reviewing?
+- Should the function return exactly `max_results` items, or up to `max_results`?
+- What should happen if the query returns zero results — empty list, exception, or something else?
+- Is there a maximum number of pages I should fetch, or should I exhaust `has_more` until I hit `max_results`?
+- Should I filter to only answered questions, or return all results including unanswered?
+- Are there any constraints on dependencies — stdlib only, or can I bring in third-party libraries?
+- Should I handle the `backoff` field in the API response, or assume the caller manages rate limiting?
+- Is caching a requirement here, or a nice-to-have I should mention in the debrief?
+- Should the function be synchronous, or is there interest in an async version?
 
 ### During execution
 
@@ -91,6 +99,42 @@ Ask the interviewer at the start: "What's your preference on AI Assist usage —
 - 🤷 **Assuming instead of asking** — use 0-5 min to surface all ambiguity
 - 🤖 **Rubber-stamping AI output** — own every line; "it looked right" is a red flag to interviewers
 - ⏱ **Running out of time** — time-box execution to 30 min; leave buffer for testing
+
+---
+
+## Scalability Debrief — "How Would You Scale This?"
+
+If asked about performance, reliability, or edge cases at scale, hit these in priority order. Each has a working implementation in `tech-interview/solution.py` you can reference.
+
+### Performance
+
+| Option | What to say | Tradeoff |
+|--------|-------------|----------|
+| **TTL caching** | "Identical queries hit the API at most once per 5 minutes. Cache key includes query, site, tags, and max_results as a sorted tuple so it's order-insensitive." | Stale data; fine for SE which changes slowly. TTL is tunable. |
+| **Smarter page size** | "Cap pagesize at 25 instead of passing max_results directly. Avoids over-fetching quota on the first page when max_results is large." | More pages for large result sets, but smaller per-request cost. |
+| **Async concurrent fetching** | "For multi-site search, fan out requests with `asyncio` + `aiohttp` or `ThreadPoolExecutor`. Useful when the same query needs results from stackoverflow, serverfault, etc." | SE rate limit (30 req/s) still applies — need a semaphore to bound concurrency. |
+
+### Reliability
+
+| Option | What to say | Tradeoff |
+|--------|-------------|----------|
+| **Exponential backoff + retry** | "Retry on 429 and 5xx with jitter: `wait = base * 2^attempt + random(0, 1)`. Respect the `backoff` field too — SE tells you exactly how long to wait." | Need a max-retries cap to avoid infinite loops. |
+| **Thread-safe cache** | "Wrap cache reads and writes in a `threading.Lock`. The check-then-write is not atomic without it — two threads can race to fetch the same uncached key." | Already implemented. Lock is held only briefly; no performance issue at this scale. |
+| **Bounded pagination** | "Add a max_pages guard (e.g. 20) so a runaway `has_more=True` loop can't exhaust quota. Return what you have and log a warning." | Truncates results for very broad queries, but prevents quota burn. |
+
+### Edge Cases
+
+| Case | What to say |
+|------|-------------|
+| **Empty query** | "Validate upfront — SE returns results for `intitle=` (blank), which is meaningless. Raise `ValueError` before making any request." |
+| **max_results ≤ 0** | "Raise `ValueError` or return `[]` immediately — don't hit the API." |
+| **All results unanswered** | "The `is_answered` filter can cause the loop to exhaust all pages and return fewer than max_results. That's correct behavior — document it." |
+| **API quota exhausted** | "SE returns `quota_remaining: 0` in every response body. Check it and raise early rather than burning retries." |
+| **`backoff` on final page** | "Still sleep — SE penalizes clients that ignore backoff even when they have their data. Skip it and you risk a temporary ban." |
+
+### One-liner answer if time is short
+
+> "I'd add TTL caching with a hashable key, cap the page size at 25, add bounded retries with exponential backoff on 5xx/429, and guard against empty query and infinite pagination. For multi-site use cases, `ThreadPoolExecutor` lets you fan out concurrently without adding a new dependency."
 
 ---
 

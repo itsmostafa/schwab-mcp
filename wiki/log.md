@@ -4,6 +4,17 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-24] update | Scalability debrief section added to live-coding.md
+
+Implemented TDD-driven improvements in tech-interview/solution.py:
+- TTL caching (stdlib dict + threading.Lock, 5-min TTL, order-insensitive tuple key)
+- Smarter pagination (pagesize capped at 25)
+Added wiki/rounds/live-coding.md section: "Scalability Debrief — How Would You Scale This?"
+Covers performance (caching, page size, async), reliability (retries, thread safety, bounded pagination), edge cases (empty query, quota exhaustion, all-unanswered results)
+All 18 tests passing (13 original + 5 new).
+
+---
+
 ## [2026-04-23] setup | Mock interview environment created in tech-interview/
 
 Created: tech-interview/README.md, PROBLEM.md, solution.py, test_solution.py
