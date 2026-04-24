@@ -1,3 +1,4 @@
+import json
 import time
 from typing import Optional
 
@@ -13,27 +14,45 @@ def search_questions(
     not_tagged: Optional[list[str]] = None,
     max_results: int = 30,
 ) -> list[dict]:
-    """
-    Search StackExchange for questions matching `query`.
+    response = []
+    page = 1
+    while len(response) < max_results:
+        resp = requests.get(
+            f"{BASE_URL}/search",
+            params={
+                "intitle": query,
+                "site": site,
+                "tagged": ",".join(tagged) if tagged else None,
+                "filter": "withbody",
+                "sort": "relevance",
+                "page": page,
+                "pagesize": max_results,
+                "nottagged": ",".join(not_tagged) if not_tagged else None,
+            },
+        )
+        resp.raise_for_status()
+        body = resp.json()
 
-    Returns up to `max_results` questions, each with:
-    title, link, score, answer_count, is_answered, tags
-    """
-    resp = requests.get(
-        f"{BASE_URL}/search",
-        params={
-            "intitle": query,
-            "site": site,
-            "tagged": ",".join(tagged) if tagged else None,
-            "filter": "withbody",
-            "sort": "relevance",
-            "page": 1,
-            "pagesize": max_results,
-            "nottagged": ",".join(not_tagged) if not_tagged else None,
-        },
-    )
-    return [res for res in resp.json()["items"] if res["is_answered"]]
+        if "error_id" in body:
+            raise Exception(f"{body['error_id']}: {body.get('error_message', '')}")
+
+        if "backoff" in body:
+            time.sleep(body["backoff"])
+
+        response = [
+            *response,
+            *[res for res in body["items"] if res["is_answered"]],
+        ]
+
+        if not body["has_more"]:
+            break
+
+        page += 1
+
+    return response[:max_results]
 
 
 if __name__ == "__main__":
-    print(search_questions(query="Golang interface", tagged=["go"]))
+    results = search_questions(query="Golang interface", tagged=["go"])
+    with open("results.json", "w") as f:
+        json.dump(results, f, indent=2)
