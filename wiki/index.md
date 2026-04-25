@@ -8,7 +8,7 @@ Master catalog of all pages. Updated on every ingest or major addition.
 
 ## Interview Rounds
 
-- [Live Coding Round](rounds/live-coding.md) — **URGENT: Friday April 25** — CoderPad, StackExchange API, 60 min, 7 evaluation dimensions
+- [Live Coding Round](rounds/live-coding.md) — ✅ DONE — CoderPad, StackExchange API, 60 min, 7 evaluation dimensions
 - [AI Integration Interview](rounds/ai-integration.md) — AI agent design, RAG, embeddings; Panther's specific AI stack
 - [Systems Design](rounds/systems-design.md) — Most revealing round per Darwayne; open-ended, approach matters most
 - [Project Retrospective](rounds/project-retro.md) — Walk through a past project; preparation for what to pick and how to frame it

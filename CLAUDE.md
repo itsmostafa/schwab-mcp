@@ -10,7 +10,7 @@ This repo is a persistent, compounding knowledge base for interview prep at Pant
 raw/                        # Source documents — read-only, never modify
   job-description.md        # Panther job posting
   additional-interview-info.md  # Text messages with Darwayne (internal tips)
-  backend-paired-coding-interview.pdf  # Official candidate prep guide for live coding round
+  candidate-prep-guide-staff-ai-engineer-soc-agent-platform.pdf  # Official prep guide for the 4 main loop interviews
 
 wiki/                       # LLM-maintained wiki — you own this
   index.md                  # Master catalog of all wiki pages (update on every change)
@@ -38,15 +38,15 @@ wiki/                       # LLM-maintained wiki — you own this
 - **Company**: Panther Labs — AI SOC platform, raised $140M, remote-first
 - **Role**: AI engineer for SOC automation (alert triage, agentic AI, detection-as-code)
 - **Referral**: Darwayne referred Mostafa; know each other through Jamie + AI work
-- **Interview status**: Round 1 (EM/VP chat with Justin) — COMPLETE
-- **Next interview**: Live coding round — **Friday April 25, 2026**
+- **Interview status**: Live coding round (Round 2) — COMPLETE
+- **Next interview**: AI Integration (Round 3) — upcoming
 - **Final gate**: CEO (founder, former CTO, very AI-focused)
 
 ## Interview Rounds (in order)
 
 1. ~~Chat with EM/VP~~ — DONE (Justin, went well)
-2. **Live coding** — Friday April 25 — CoderPad, 60 min, StackExchange API — URGENT
-3. AI Integration interview
+2. ~~Live coding~~ — DONE (CoderPad, StackExchange API)
+3. **AI Integration interview** — NEXT
 4. Systems design — "most revealing" per Darwayne
 5. Project retrospective
 6. Culture
@@ -77,4 +77,4 @@ Check for: contradictions between pages, stale info, orphan pages, concepts ment
 - The index uses one line per page: `- [Title](path) — one-line hook`
 - Log entries start with `## [YYYY-MM-DD]` so they're greppable
 - Raw sources are immutable — never edit files in `raw/`
-- Prioritize the live coding round above all else until April 25
+- Prioritize the AI Integration round as the next immediate focus

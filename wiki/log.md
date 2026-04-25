@@ -4,6 +4,18 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-24] ingest | candidate-prep-guide-staff-ai-engineer-soc-agent-platform.pdf
+
+Live coding round completed. Ingested official Panther prep guide for the 4 remaining main loop interviews.
+Updated: overview.md (live coding marked DONE, AI Integration now NEXT, priorities reordered, Key Themes Across All Interviews table added)
+Updated: rounds/ai-integration.md (format, 7 official signals, official prep checklist)
+Updated: rounds/systems-design.md (format, 6 official signals, official prep guidance)
+Updated: rounds/project-retro.md (format, 6 official signals, official project selection criteria, come prepared list)
+Updated: rounds/culture.md (format, 6 official signals incl. Grit & Ambiguity / Startup Mindset / Self-Awareness, story prep format)
+Updated: index.md (live coding marked DONE)
+
+---
+
 ## [2026-04-24] update | Scalability debrief section added to live-coding.md
 
 Implemented TDD-driven improvements in tech-interview/solution.py:

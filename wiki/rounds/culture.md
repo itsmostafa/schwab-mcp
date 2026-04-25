@@ -1,6 +1,28 @@
 # Culture Round
 
-## Panther's 3 Core Values
+**Format**: 45 min · Behavioral Discussion
+
+**What this is**: Panther's culture is built on three core values — Create Customer Love, Be an Owner, and Take Care of the Team. This interview focuses on how you've demonstrated these values through real, specific professional examples. Domain skills are assessed elsewhere — this round is about **grit, autonomy, and the attributes that make competence actionable.**
+
+## Signals Panther Is Evaluating
+
+| Signal | What It Means |
+|--------|--------------|
+| **Create Customer Love** | Direct customer engagement; building things that solve real problems over technically interesting ones |
+| **Be an Owner** | End-to-end accountability, proactively fixing problems, founder-level responsibility |
+| **Take Care of the Team** | Supporting teammates, sharing knowledge, prioritizing team success over personal credit |
+| **Grit & Ambiguity** | Making progress in undefined environments; handling failure, pivots, unclear requirements |
+| **Startup Mindset** | Energized by building from scratch; comfortable with high ownership and fast movement |
+| **Self-Awareness** | Honest identification of strengths and growth areas; learning from mistakes |
+
+## Official Prep Guidance
+
+- **Prepare 4-6 specific stories** from your career demonstrating Panther's core values. Specific, recent, showing your individual impact
+- **For each story**: Situation → your specific action → outcome → what you'd do differently
+- **Think about times you've**: gone above and beyond for a customer; owned a problem without being asked; stepped up for a struggling teammate; made a hard call under ambiguity
+- **Be honest and specific**: authentic self-reflection outperforms polished stories. Failures discussed candidly are often more compelling than success stories
+
+## Panther's 3 Core Values (Detail)
 
 1. **Create Customer Love** — customer-obsessed, engage directly with customers, build what solves real problems
 2. **Be an Owner** — take initiative, don't wait to be told, care about outcomes not just tasks

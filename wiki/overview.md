@@ -17,8 +17,8 @@
 | # | Round | Status | Notes |
 |---|-------|--------|-------|
 | 1 | Chat with EM/VP (Justin) | ✅ DONE | "Justin seems like an awesome dude." Went well. |
-| 2 | **Live coding** | 🔥 **FRIDAY APR 25** | CoderPad, StackExchange API, 60 min — see [[rounds/live-coding]] |
-| 3 | AI Integration | Upcoming | Deep AI/agent knowledge — see [[rounds/ai-integration]] |
+| 2 | Live coding | ✅ DONE | CoderPad, StackExchange API — see [[rounds/live-coding]] |
+| 3 | **AI Integration** | 🔥 **NEXT** | 45-60 min, technical design discussion — see [[rounds/ai-integration]] |
 | 4 | Systems design | Upcoming | "Most revealing" per Darwayne — see [[rounds/systems-design]] |
 | 5 | Project retrospective | Upcoming | Walk through a real project — see [[rounds/project-retro]] |
 | 6 | Culture | Upcoming | Panther's 3 values — see [[rounds/culture]] |
@@ -35,19 +35,32 @@ Per Darwayne, these give a real edge:
 
 ---
 
-## Priorities Right Now (April 22, 2026)
+## Priorities Right Now (April 24, 2026)
 
-1. **Live coding round — Friday April 25** (3 days away)
-   - Practice StackExchange API v2.3 GET /search
-   - Rehearse the Discuss → Align → Execute → Test → Debrief flow
-   - Practice using AI Assist critically (not blindly)
-   - Focus on communication while coding
+Live coding round completed April 25. Remaining rounds in order:
 
-2. **Systems design** — most revealing round, worth deep prep
+1. **AI Integration** — next up. 45-60 min, no coding, technical design discussion about building production-grade AI agents. Clarity of reasoning matters more than perfect syntax.
 
-3. **Project retrospective** — pick a strong project now, prepare the narrative
+2. **Systems design** — "most revealing" per Darwayne. Approach and tradeoff articulation matter most.
 
-4. **AI Integration** — lean into existing knowledge of RAG, agents, embeddings
+3. **Project retrospective** — pick a recent (last 18 months), cross-functional project you led end-to-end. Prepare concrete metrics.
+
+4. **Culture** — 4-6 specific stories mapped to Panther's 3 values: Create Customer Love, Be an Owner, Take Care of the Team.
+
+---
+
+## Key Themes Across All Interviews (Official Guide)
+
+These threads run through every round — Panther is consistently evaluating them:
+
+| Theme | What It Means |
+|-------|--------------|
+| **Production Thinking Over Prototypes** | Demonstrate reliability, evaluation, monitoring, and failure-mode thinking — not just "it works on my machine" |
+| **Security Awareness** | This is a security product. Show you understand the unique risks of automating decisions in high-stakes environments |
+| **Customer Obsession** | Connect technical decisions to customer outcomes. Why does this architecture choice matter? Because it reduces triage time for analysts |
+| **Startup Ownership** | Move fast with a small team. End-to-end accountability, decisions without perfect information, care about the outcome |
+| **Clarity of Communication** | How you explain your thinking matters as much as what you think. Structure answers, explain reasoning |
+| **Depth Over Breadth** | Panther is evaluating whether you've actually built these systems — not whether you can recite definitions. Go deep on real experience |
 
 ---
 

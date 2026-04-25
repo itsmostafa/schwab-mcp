@@ -1,16 +1,32 @@
 # Systems Design Round
 
+**Format**: 60 min · High-Level Technical Discussion (no coding)
+
 Per Darwayne: **"The most revealing one IMO."** They care about how you approach the problem, recognize it's open-ended, and speak to your decisions.
 
-## What They Evaluate
+**What this is**: Evaluates your ability to handle ambiguous technical problems and design scalable, well-reasoned systems. You'll walk through system architecture decisions — processes, storage/databases, networking, APIs — and discuss tradeoffs, prioritization, and cross-team collaboration. **Not a coding exercise.**
 
-- Do you recognize the problem is open-ended and clarify scope?
-- How do you break down the problem?
-- Can you speak to trade-offs in your choices?
-- Do you think about scale, failure modes, and operational concerns?
-- Do you consider the security domain specifically?
+## Signals Panther Is Evaluating
 
-## Approach Framework
+| Signal | What It Means |
+|--------|--------------|
+| **Systems Thinking** | End-to-end design with clear data abstractions, API boundaries, storage strategies |
+| **Technical Reasoning** | Articulating tradeoffs — not just "it depends" but what and why |
+| **Problem-Solving Under Ambiguity** | Good clarifying questions, defining success criteria, systematic approach |
+| **Failure Mode Awareness** | Proactively thinking about what can go wrong and how to detect/mitigate it |
+| **Collaboration & Communication** | Explaining technical decisions to non-technical stakeholders |
+| **Strategic Fit** | Good judgment, initiative, alignment with how Panther thinks about security and AI |
+
+## Official Prep Guidance
+
+- **Pick 1-2 complex projects to discuss deeply** — ideally AI, automation, or agentic systems. Know the key architectural tradeoffs and what you'd do differently
+- **Practice designing an agentic system from scratch** — data flow, storage decisions, API design, concurrency, latency, and failure handling
+- **Think in tradeoffs** — explain why you made each decision and what the alternatives were. Latency vs. cost. Consistency vs. availability
+- **Come with good questions** — curiosity about Panther's technical challenges and architectural decision-making signals strong alignment
+
+## How to Evaluate (Approach Framework)
+
+## Approach Framework (How to Navigate the Interview)
 
 ### 1. Clarify First (2-3 min)
 Ask before drawing anything:

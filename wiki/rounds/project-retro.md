@@ -1,27 +1,41 @@
 # Project Retrospective Round
 
-## What They're Looking For
+**Format**: 60 min · Discussion-Based (no coding)
 
-A structured walk-through of a real project you built or led. They want to understand:
-- How you approach ambiguous problems
-- How you made key architectural/product decisions
-- What you learned from failures or pivots
-- Your ability to communicate technical work clearly
-- Your ownership mindset
+**What this is**: A deep-dive into a recent, complex technical project you've led end-to-end from concept to launch. You choose the project. No coding or technical execution — a structured conversation about a real initiative you drove.
+
+## Signals Panther Is Evaluating
+
+| Signal | What It Means |
+|--------|--------------|
+| **Project Scope** | Meaningful initiative requiring real technical leadership and cross-functional coordination |
+| **Technical Ownership** | Genuine end-to-end accountability, deep understanding of the full stack |
+| **Business Impact** | Connecting engineering decisions to business and customer outcomes |
+| **Measurement of Success** | Concrete metrics — not just "it shipped" but what changed and by how much |
+| **Problem Solving** | Biggest technical challenges, how you solved them, tradeoffs made |
+| **Collaboration & Influence** | Working with PMs, designers, engineers, business stakeholders |
 
 ## Choosing a Project
 
-Pick a project that:
-- Has real impact you can quantify
-- Involved meaningful technical decisions (not just execution)
-- Has a good failure/learning story (shows self-awareness)
-- Is directly relevant to Panther's domain (AI, security, agents, data pipelines)
+**Official criteria from Panther's prep guide:**
+- Completed in the last 18 months
+- At least 3 months in duration
+- Cross-functional (PM, design, other engineering teams, business stakeholders)
+- Within the domain of this role (AI/ML engineering, backend systems, security tooling)
+- You had genuine end-to-end ownership — not just one contributor among many
 
 **Best candidates** (given Mostafa's background):
 - Any AI agent or LLM-powered system you built
 - Security tooling, detection systems, or SOC-adjacent work
 - Data pipeline or real-time processing system
 - Something with a clear before/after improvement
+
+## Come Prepared to Discuss
+
+- Your specific scope and responsibilities; project duration, team size, and functions involved
+- Technology stack and key architectural decisions with tradeoffs
+- The business problem, how you measured success, and the biggest technical challenge
+- The outcome, quantified if possible — and what you'd do differently
 
 ## Story Structure (STAR + Decision Layer)
 
