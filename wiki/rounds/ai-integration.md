@@ -27,7 +27,87 @@
 
 ## What They're Assessing (Deeper Detail)
 
-From the job description and role context:
+From the job description and role context, the bar is not "can you define RAG?" It is whether you can reason through a production agent that a real SOC team would trust.
+
+- Can you separate deterministic control flow from probabilistic model judgment?
+- Can you design retrieval that handles noisy security data, high cardinality, and token limits?
+- Can you define tool boundaries, especially read-only vs. side-effecting actions?
+- Can you describe evaluation before launch, monitoring after launch, and rollback when quality drops?
+- Can you speak fluently about analyst workflows, not just model APIs?
+- Can you make safety, auditability, and customer trust first-class design constraints?
+
+## Preparation Plan
+
+### 1. Prepare one canonical design: alert triage agent
+
+Be ready to whiteboard this end to end:
+
+```
+Alert fires
+→ deterministic intake / schema validation
+→ enrichment fan-out: alert details, user history, asset context, threat intel, related logs
+→ retrieval: similar alerts, past analyst decisions, detection docs, threat intel notes
+→ prompt assembly with ranked evidence and token budget
+→ LLM reasoning with structured output
+→ policy gate: confidence + severity + allowed action
+→ analyst review / ticket / escalation / limited auto-close
+→ feedback capture and evaluation dataset update
+```
+
+The key is to narrate where the LLM is useful and where it should not be trusted. Use code and policy for validation, permissions, routing, confidence thresholds, audit logs, and side effects. Use the LLM for synthesis, prioritization, natural-language explanation, and ambiguity handling.
+
+### 2. Practice the "50K events / 200K context" answer
+
+Do not say "put it all in context." A strong answer:
+
+- Start with structured filtering: tenant, detection ID, time range, entities, severity, data source
+- Use hybrid retrieval: SQL/BM25 for exact indicators and vector search for semantic similarity
+- Retrieve in layers: top entities, representative event clusters, past similar alerts, related detection docs
+- Rerank for precision and diversity
+- Summarize or aggregate repetitive events before the final prompt
+- Keep citations/evidence IDs so the analyst can inspect the raw events
+
+### 3. Prepare a prompt architecture answer
+
+For "12 monolithic prompt strings," answer with modular prompt composition:
+
+- Shared base: role, safety constraints, output schema, "cite evidence or say unknown"
+- Task module: triage vs. chat vs. detection generation vs. text-to-search
+- Customer/tenant policy module: allowed actions, severity thresholds, integrations
+- Retrieved evidence module: alert, enrichment, past decisions, threat intel
+- Output contract: JSON schema with classification, confidence, rationale, evidence IDs, recommended next action
+- Tests: golden prompts, regression cases, prompt diff review, offline eval before rollout
+
+### 4. Prepare production metrics
+
+Name both AI quality metrics and SOC outcome metrics:
+
+- Offline: precision/recall by severity, false-negative rate, calibration, citation faithfulness, schema-valid output rate
+- Online: analyst override rate, escalation acceptance rate, time-to-triage, auto-close reversal rate, tool error rate, latency p50/p95/p99, cost per alert
+- Safety: unauthorized tool attempt rate, prompt-injection detections, policy-gate blocks, high-severity human-review coverage
+- Drift: classification distribution changes, retrieval hit-rate changes, tenant-specific degradation, feedback disagreement trends
+
+### 5. Prepare the security answer
+
+SOC logs are attacker-controlled input. Treat raw event text as untrusted data:
+
+- Keep instructions separate from retrieved/log content
+- Use structured tool APIs, RBAC, and server-side authorization
+- Sanitize or quote untrusted text in prompts
+- Require human confirmation or policy gates for write tools
+- Log every tool call and decision for auditability
+- Use allowlists for tools and enforce tenant isolation at the data layer
+
+### 6. Rehearse your own system story
+
+Have a 3-5 minute story about an agentic, AI, security, or automation system you built. Structure it as:
+
+1. Problem and user pain
+2. Architecture and key data flow
+3. Two tradeoffs you made
+4. How you evaluated quality
+5. What failed or surprised you
+6. What you would change now
 
 ## Key Topics to Know Cold
 
@@ -77,7 +157,20 @@ Connect everything back to SOC automation:
 - "Walk me through an agentic system you've built."
 - "How do you handle hallucination in a security context where accuracy is critical?"
 
+## Strong Answer Shape
+
+For most questions, use this structure:
+
+1. **Clarify**: scale, latency target, action scope, customer trust constraints
+2. **State the architecture**: components and data flow first
+3. **Call out boundaries**: deterministic code vs. retrieval vs. LLM judgment
+4. **Discuss tradeoffs**: latency/cost/accuracy, autonomy/safety, recall/precision
+5. **Make it production-grade**: evals, monitoring, rollback, audit, human review
+6. **Tie back to SOC value**: less analyst toil, faster triage, better coverage, preserved trust
+
 ## See Also
 
 - [[concepts/agentic-ai]] — deep reference on AI agents
+- [[concepts/tool-calling]] — tool design, agent loop, read vs. write tools
+- [[concepts/soc-domain]] — SOC workflow and Panther product context
 - [[panther/role]] — what Panther specifically needs

@@ -4,6 +4,10 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-25] query | AI Integration interview preparation
+
+Reviewed wiki/ for the upcoming AI Integration interview. Expanded rounds/ai-integration.md with a concrete preparation plan, canonical alert triage agent design, token-budget/RAG answer, prompt architecture answer, production metrics, security guardrails, personal system story structure, and strong answer framework.
+
 ## [2026-04-24] ingest | candidate-prep-guide-staff-ai-engineer-soc-agent-platform.pdf
 
 Live coding round completed. Ingested official Panther prep guide for the 4 remaining main loop interviews.
