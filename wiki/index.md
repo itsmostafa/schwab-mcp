@@ -6,6 +6,7 @@ Master catalog of all pages. Updated on every ingest or major addition.
 
 - [Overview](overview.md) — Company, role, full interview process, current status, and priorities
 - [Prep Plan](prep-plan.md) — Study plan + retention strategy for AI Integration (Round 3) and Systems Design (Round 4)
+- [Study Prompt](study-prompt.md) — Paste-ready prompt to run a guided AI study session for Rounds 3 & 4
 
 ## Interview Rounds
 

@@ -4,6 +4,12 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-25] resource | Guided study prompt created for Rounds 3 & 4
+
+Created wiki/study-prompt.md — a self-contained paste-ready prompt for any AI chat session. Sets up Socratic quiz mode, mock interview mode, whiteboard narration, and weak-spots drill. Embeds the triage agent anchor design, all 10 AI Integration topics, all 5 systems design scenarios, and explicit rubrics for strong vs weak answers for both rounds.
+
+---
+
 ## [2026-04-25] plan | Prep plan created for Round 3 (AI Integration) and Round 4 (Systems Design)
 
 Created wiki/prep-plan.md with: per-round breakdown of what's being evaluated, anchor alert triage agent design, topic-by-topic prep for both rounds, 5-technique retention strategy, 4-day session plan, and day-of checklists for both interviews.
