@@ -1,7 +1,7 @@
 ---
 tags: [agentic-ai, tool-use, function-calling, llm, interview-prep]
 type: concept
-last-updated: 2026-04-23
+last-updated: 2026-04-26
 ---
 
 # Tool Calling
@@ -12,12 +12,12 @@ How LLMs invoke external functions — the mechanism that gives agents real-worl
 
 An LLM by itself only generates text. Tool calling is the mechanism by which an LLM can **request** the execution of an external function, receive the result, and incorporate it into its reasoning.
 
-Critical distinction: **the model doesn't execute anything**. It outputs a structured request (JSON) saying "call this function with these arguments." Your code actually runs the function. This means you — the developer — always control what the agent can and cannot do.
+Critical distinction: for client-side tools, **the model doesn't execute anything**. It outputs a structured request saying "call this function with these arguments." Your code actually runs the function. Some providers also offer server-side tools, but your application still needs explicit policy, permissions, and audit boundaries around tool access.
 
 ## The Protocol (Step by Step)
 
 ```
-1. Developer defines tools (name + description + JSON Schema for args)
+1. Developer defines tools (name + description + JSON Schema/input schema for args)
 2. User sends a message
 3. LLM reasons, decides a tool is needed
 4. LLM outputs a tool_use block: { name, id, input }   ← stop_reason: "tool_use"
@@ -56,7 +56,7 @@ This is a **request-response loop** — the LLM and your runtime take turns.
 Three parts that matter:
 - **`name`** — must be unambiguous and action-oriented (`get_`, `search_`, `create_`, `close_`)
 - **`description`** — this is how the LLM decides *when* to use the tool. Invest here.
-- **`input_schema`** — JSON Schema; forces the LLM to produce structured, validatable arguments
+- **`input_schema` / `parameters`** — JSON Schema-style argument contract; constrains the model output, but handlers must still validate semantics and permissions
 
 ## Anthropic API Mechanics
 
@@ -136,7 +136,7 @@ Your code: runs both concurrently
 Model: continues reasoning with both datasets
 ```
 
-This is significantly faster than sequential calls for independent lookups.
+This can be significantly faster than sequential calls for independent lookups, assuming the host runtime actually executes the requested calls concurrently and the downstream systems can handle it.
 
 ## SOC-Specific Tool Inventory (Panther Context)
 
@@ -162,7 +162,7 @@ The last two are **write tools** — they take real-world action. These deserve 
 The description is how the LLM decides *whether* and *when* to call a tool. A vague description leads to wrong tool selection. A good description says: what it does, when to use it, and when *not* to use it.
 
 ### Minimal, focused tool sets
-More tools = more confusion. Start small. A model given 50 tools picks wrong more often than one given 10. Group related operations or use a single flexible tool over many narrow ones.
+More tools generally means a harder selection problem. Start small, name tools distinctly, and group related operations when that makes the decision surface clearer.
 
 ### Read vs. write tools
 Separate tools that retrieve information from tools that take action. Read tools are safe to retry; write tools can have side effects. Many systems require explicit human confirmation before write tools execute.
@@ -189,15 +189,21 @@ Log every tool call and its result. In a SOC context, this is also your audit tr
 
 ## Talking Points for "Explain Tool Calling"
 
-1. **What it is**: "Tool calling is how we give LLMs agency — they reason about what information or action they need, request it through a structured interface, and incorporate the result. Without it, agents can only reason about static context."
+1. **What it is**: "Tool calling is how we give LLMs controlled access to external data and actions — they request a tool through a structured interface, then incorporate the returned result. Without tools, agents can only reason over the context already provided."
 
-2. **The key insight**: "The model doesn't execute anything. It requests a function call. Your code runs it. This separation means you can enforce security boundaries, add audit logging, require human confirmation for destructive actions — all at the host layer."
+2. **The key insight**: "For client-side tools, the model doesn't execute anything. It requests a function call. Your code runs it. This separation means you can enforce security boundaries, add audit logging, require human confirmation for destructive actions — all at the host layer."
 
 3. **Why the description matters**: "The tool description is effectively a prompt. If it's ambiguous, the model picks the wrong tool. I've seen agents fail not because the code was wrong but because someone wrote a lazy description."
 
-4. **Parallel calls**: "One underappreciated feature is parallel tool calling — the model can ask for multiple tools in one shot. For something like alert triage where you need threat intel, user history, and asset context simultaneously, this cuts latency significantly."
+4. **Parallel calls**: "One underappreciated feature is parallel tool calling — the model can ask for multiple independent tools in one shot. For alert triage, threat intel, user history, and asset context can often be fetched concurrently."
 
-5. **Building a system**: "The core loop is: call API → check stop_reason → if tool_use, execute + append result + loop → if end_turn, return response. The complexity is in the tool design, error handling, and guardrails around write operations."
+5. **Building a system**: "The core loop is: call API → inspect tool-call response → execute allowed tools → append tool results → loop until final response or iteration limit. The complexity is in tool design, error handling, and guardrails around write operations."
+
+## Validation Sources
+
+- OpenAI: function calling is tool calling with function tools defined by JSON Schema, and the application receives arguments to access data or take actions.
+- Anthropic: Claude returns `stop_reason: "tool_use"` and `tool_use` blocks for client tools; the application executes them and sends back `tool_result`.
+- MCP specification: MCP standardizes how hosts connect LLM applications to resources, prompts, and tools, with explicit user consent and tool-safety requirements.
 
 ## Building a System: Key Design Decisions
 
@@ -215,4 +221,4 @@ Log every tool call and its result. In a SOC context, this is also your audit tr
 
 - [[concepts/agentic-ai]] — agent loop, planning strategies, memory types
 - [[rounds/ai-integration]] — AI integration interview; tool calling is likely to come up here
-- [[panther/role]] — Panther's 4-agent triage pipeline (each step is tool-calling under the hood)
+- [[panther/role]] — Panther's 4 SOC agent capabilities; tool boundaries are relevant to each

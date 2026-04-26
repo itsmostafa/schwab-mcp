@@ -1,3 +1,9 @@
+---
+tags: [agentic-ai, rag, embeddings, evaluation, interview-prep]
+type: concept
+last-updated: 2026-04-26
+---
+
 # Agentic AI
 
 Reference for the AI Integration round and general interview prep.
@@ -21,11 +27,11 @@ A "tool" can be: a function call, a search, a code executor, a database write, a
 
 ## Planning Strategies
 
-**ReAct** (Reason + Act): LLM interleaves reasoning steps and tool calls. Simple, interpretable.
+**ReAct** (Reason + Act): LLM interleaves reasoning traces and task-specific actions/tool calls. Useful as a conceptual pattern for agents that need to inspect external state before deciding.
 
-**Reflexion**: Agent reflects on past failures and adjusts. Useful when first-pass accuracy is insufficient.
+**Reflexion**: Agent incorporates feedback from previous attempts into future attempts. Useful as a research pattern for tasks where retry and feedback loops are available.
 
-**Chain-of-Thought**: Force step-by-step reasoning before action. Reduces errors on complex tasks.
+**Chain-of-Thought / structured reasoning**: Asking for intermediate reasoning can improve some multi-step tasks, but do not rely on hidden reasoning as an audit trail. In production, prefer explicit evidence, concise rationales, tool traces, and structured outputs.
 
 **Plan-then-Execute**: Generate full plan first, then execute each step. Better for long-horizon tasks.
 
@@ -46,14 +52,14 @@ Query → Embed query → Search vector index → Retrieve chunks → Augment pr
 ### RAG vs Fine-tuning
 | | RAG | Fine-tuning |
 |--|-----|-------------|
-| Cost | Low (indexing only) | High (training) |
-| Update frequency | Real-time | Periodic retraining |
-| Interpretability | High (can inspect retrieved docs) | Low |
-| Best for | Dynamic knowledge, factual recall | Style, format, behavior changes |
+| Cost | Usually lower to update knowledge; still pays retrieval/storage/inference cost | Training/eval cost; can reduce prompt/retrieval overhead for stable behavior |
+| Update frequency | Can incorporate new documents quickly once indexed | Requires retraining/redeployment to absorb new knowledge |
+| Source grounding | Can cite retrieved evidence if the pipeline preserves source IDs | Does not inherently cite sources |
+| Best for | Dynamic knowledge, factual lookup, inspectable evidence | Style, format, domain behavior, task specialization |
 
 ## Multi-Agent Patterns
 
-**Orchestrator + Workers**: Central orchestrator assigns tasks to specialized workers. Panther's 4 agents likely follow this pattern.
+**Orchestrator + Workers**: Central orchestrator assigns tasks to specialized workers. This is a plausible pattern for SOC agents, but the exact Panther internal architecture is not public.
 
 **Supervisor**: One agent oversees others, can re-try or re-route.
 
@@ -63,7 +69,7 @@ Query → Embed query → Search vector index → Retrieve chunks → Augment pr
 
 ## Feedback Loops for Agent Improvement
 
-How Panther's "collective intelligence framework" likely works:
+How Panther's "collective intelligence framework" could work, inferred from the job post and Panther's public AI alert-triage material:
 1. Analyst reviews agent's triage decision (accept/reject/modify)
 2. Decision + context captured as a training signal
 3. Signals aggregated → either:
@@ -88,9 +94,16 @@ How Panther's "collective intelligence framework" likely works:
 - Ground responses in retrieved evidence; cite sources
 - Use smaller, scoped prompts over large open-ended ones
 - Add explicit "I don't know" behavior for low-confidence cases
-- Structured output (JSON schema) reduces drift from format
-- Constitutional AI / guardrails layer on top of raw LLM output
+- Structured output (JSON schema) reduces format drift but does not replace semantic validation
+- Policy checks, output validators, and tool-permission gates outside the model
 - Human-in-the-loop for high-stakes actions (blocking, closing tickets)
+
+## Validation Sources
+
+- RAG: Lewis et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" (NeurIPS 2020).
+- Agent patterns: ReAct (Yao et al., 2022), Reflexion (Shinn et al., 2023), and chain-of-thought prompting (Wei et al., 2022).
+- RAG evaluation: RAGAS describes faithfulness, answer relevancy, and context precision as evaluation dimensions.
+- RAG vs fine-tuning: AWS Prescriptive Guidance recommends starting with RAG for custom-document QA and using fine-tuning for additional behavior/task needs; the two can also be combined.
 
 ## See Also
 

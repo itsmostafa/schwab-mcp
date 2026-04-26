@@ -23,7 +23,7 @@
 - **Think prompt engineering at scale**: how do you avoid 12 monolithic prompt strings that drift independently? Composable modules, shared bases, testing
 - **Know AI security blindspots**: prompt injection is real when log events are attacker-controlled; structural defenses + RBAC at the tool execution boundary
 - **Think in production metrics**: offline eval sets, online metrics (analyst override rate, classification distribution), regression detection, feedback loops
-- **Brush up on**: RAG, LLM tool calling, MCP (Model Context Protocol), agentic loop design, prompt composition, confidence scoring, SOC alert triage workflows
+- **Brush up on**: RAG, LLM tool calling, MCP (Model Context Protocol for exposing tools/resources/prompts), agentic loop design, prompt composition, confidence scoring, SOC alert triage workflows
 
 ## What They're Assessing (Deeper Detail)
 
@@ -50,7 +50,7 @@ Alert fires
 → prompt assembly with ranked evidence and token budget
 → LLM reasoning with structured output
 → policy gate: confidence + severity + allowed action
-→ analyst review / ticket / escalation / limited auto-close
+→ analyst review / ticket / escalation / limited auto-close for high-confidence benign cases
 → feedback capture and evaluation dataset update
 ```
 
@@ -112,9 +112,9 @@ Have a 3-5 minute story about an agentic, AI, security, or automation system you
 ## Key Topics to Know Cold
 
 ### RAG (Retrieval-Augmented Generation)
-- Why RAG over fine-tuning: cheaper, more up-to-date, more controllable
+- Why RAG over fine-tuning: better for frequently changing knowledge and inspectable evidence; fine-tuning is better for stable behavior, style, and task specialization
 - Chunking strategies: fixed-size vs semantic, overlap, hierarchy
-- Embedding models: OpenAI text-embedding-3, sentence-transformers, BGE
+- Embedding models: OpenAI `text-embedding-3-small` / `text-embedding-3-large`, Sentence Transformers, BGE-style open models
 - Vector stores: Pinecone, Weaviate, Qdrant, pgvector, Chroma
 - Retrieval: cosine similarity, MMR (max marginal relevance), hybrid BM25+vector
 - Reranking: cross-encoder rerankers for precision
@@ -123,7 +123,7 @@ Have a 3-5 minute story about an agentic, AI, security, or automation system you
 ### Agentic Frameworks
 - Core loop: perceive → reason → act → observe
 - Tool use / function calling (Anthropic, OpenAI)
-- Planning: ReAct, Reflexion, Chain-of-Thought
+- Planning: ReAct, Reflexion, plan-then-execute, structured reasoning
 - Multi-agent: orchestrator + worker pattern, message passing
 - Agent memory: in-context, external (episodic, semantic, procedural)
 - Temporal/workflow orchestration: Temporal, LangGraph, CrewAI
@@ -139,6 +139,12 @@ Have a 3-5 minute story about an agentic, AI, security, or automation system you
 - Indexing: HNSW, IVF-Flat, PQ
 - Trade-offs: recall vs latency vs memory
 - When to use pgvector vs dedicated vector DB
+
+## Validation Notes
+
+- Panther's public job post confirms the four agent capabilities: alert triage, interactive chat, detection code generation, and text-to-search.
+- Panther's AI alert-triage blog describes autonomous investigation, MCP-connected tools, evidence-backed classifications, feedback into detection logic, and conservative auto-close thresholds for benign classifications.
+- RAG and tool-calling guidance here is a practical interview synthesis; exact latency targets, retrieval thresholds, and autonomy levels should be stated as assumptions during the interview.
 
 ## Panther-Specific Angle
 

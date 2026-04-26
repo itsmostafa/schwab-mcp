@@ -9,14 +9,14 @@ Reference patterns for the systems design round.
 Source → Ingestion (Kafka/Kinesis) → Processing (Flink/Spark/Lambda) → Storage → Query layer
 ```
 - Backpressure handling: Kafka consumer lag monitoring
-- Exactly-once vs at-least-once: important for security (don't lose alerts, don't double-triage)
+- Delivery semantics: prefer idempotent writes, event IDs, and deduplication at system boundaries; platform "exactly-once" guarantees do not remove the need to reason about retries and side effects
 - Schema evolution: how to handle log format changes without breaking pipeline
 
 ### Real-Time AI Inference
 ```
 Event → Feature extraction → Embedding → Vector search → LLM prompt → Output
 ```
-- Latency budget: p99 < 5s for real-time triage
+- Latency budget: define the SLA explicitly. A few seconds might be appropriate for first-pass enrichment; analyst-facing triage workflows often tolerate longer if evidence quality improves.
 - Caching: embed common queries, cache frequent retrievals
 - Fallback: if LLM is slow/down, fall back to rule-based triage
 
@@ -92,6 +92,8 @@ When approaching any design question:
 | 1 Gbps network throughput | ~125 MB/s |
 | 1M events/day | ~11.5 events/second |
 | 1B events/day | ~11,500 events/second |
+
+Note: the latency and storage numbers here are interview-calibration heuristics, not Panther product guarantees. Always state assumptions before using them.
 
 ## See Also
 

@@ -1,6 +1,6 @@
 ---
 type: resource
-last-updated: 2026-04-25
+last-updated: 2026-04-26
 tags: [prep, study-prompt, ai-integration, systems-design]
 ---
 
@@ -24,7 +24,7 @@ Interview 1 (AI Integration, 45-60 min): A technical design conversation — no 
 Interview 2 (Systems Design, 60 min): Open-ended technical design. The most revealing round per my referral. They care about process more than answers: do I clarify before diving in, articulate tradeoffs explicitly, surface failure modes proactively, and communicate decisions clearly?
 
 The anchor design that spans both interviews: an AI-powered alert triage agent. Core flow:
-Alert → deterministic intake → enrichment fan-out (user history, asset context, threat intel) → hybrid retrieval (BM25 for IOC matches + vector search for similar alerts/past decisions) → rerank + token-budget management → prompt assembly (shared base + task module + tenant policy + evidence) → LLM → structured JSON output (classification, confidence, rationale, evidence IDs) → policy gate (confidence threshold, severity, allowed actions) → analyst review / auto-close / escalation → feedback capture → eval dataset → model/index improvement
+Alert → deterministic intake → enrichment fan-out (user history, asset context, threat intel) → hybrid retrieval (BM25 for IOC matches + vector search for similar alerts/past decisions) → rerank + token-budget management → prompt assembly (shared base + task module + tenant policy + evidence) → LLM → structured JSON output (classification, confidence, rationale, evidence IDs) → policy gate (confidence threshold, severity, allowed actions) → analyst review / high-confidence benign auto-close / escalation → feedback capture → eval dataset → model/index improvement
 
 Key principle: deterministic code handles validation, permissions, routing, policy, audit logging, and side effects. The LLM handles synthesis, prioritization, natural-language explanation, and ambiguity. Never let the LLM enforce security boundaries.
 
@@ -34,11 +34,11 @@ AI Integration topics (test all of these):
 1. RAG pipeline design: chunking strategies, embedding model choice, hybrid retrieval (BM25 + vector), reranking, metadata filtering
 2. The "50K events / 200K context window" problem — how do you select what goes in the prompt?
 3. Prompt architecture at scale: modular composition (shared base, task module, tenant policy module, evidence module) vs monolithic strings
-4. Production metrics: offline (precision/recall, schema-valid output rate), online (analyst override rate, auto-close reversal rate, time-to-triage, p99 latency), safety (prompt injection detections, policy-gate blocks), drift signals
+4. Production metrics: offline (precision/recall, schema-valid output rate), online (analyst override rate, auto-close reversal rate, time-to-triage, latency against SLA), safety (prompt injection detections, policy-gate blocks), drift signals
 5. AI security: prompt injection when log events are attacker-controlled — structural defenses, RBAC at tool execution boundary, human gates for write tools
 6. Feedback loops: how analyst decisions become training signal (RAG index update, fine-tune candidates, few-shot examples), A/B testing agent versions, rollback
 7. Tool calling: protocol (model requests, host executes), read vs write tools, tool description quality, parallel calls, audit logging
-8. RAG vs fine-tuning: cost, update frequency, interpretability, when to use each
+8. RAG vs fine-tuning: dynamic knowledge and evidence grounding vs stable behavior/style/task specialization, when to use each
 9. Hallucination mitigation in a security context where accuracy is critical
 10. Personal system story (I'll describe a real system I built — coach me on structure and depth)
 

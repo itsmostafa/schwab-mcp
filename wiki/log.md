@@ -4,6 +4,12 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-26] audit | AI/system design concepts externally validated
+
+Created wiki/audits/ai-system-design-validation.md with a primary-source claim register for AI Integration and Systems Design material. Validated Panther role/product claims, RAG/tool-calling/MCP/prompt-injection/vector-index concepts, and systems-design heuristics. Corrected overstatements around auto-close confidence, fixed latency/vector-count thresholds to be explicit assumptions, clarified RAG vs fine-tuning, MCP, tool-calling execution boundaries, and structured reasoning vs chain-of-thought.
+
+---
+
 ## [2026-04-25] plan | 36-hour compressed prep plan created for back-to-back Rounds 3 & 4
 
 Designed a memory-retention-optimized study plan for ~36-hour window with both rounds same day. Key insight from audit: wiki content is strong; the gap is rehearsed retrieval under pressure. Plan built around 3 anti-blank scaffolds (Universal Opener, Triage Rosary, Systems Design 6-Step), 4 study blocks (~7 hrs total), two protected sleep nights, and a deliberate between-round reset protocol. All study is retrieval-based (no re-reading). Personal system story draft is the single highest-priority Block A action.

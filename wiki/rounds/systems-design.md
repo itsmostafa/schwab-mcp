@@ -89,8 +89,8 @@ Key components: log ingestion, normalization/parsing, schema-on-read vs schema-o
 |----------|----------|----------|---------------|
 | Latency vs accuracy | Smaller, faster model | Larger, slower model | Alert volume is high, triage just needs first-pass |
 | RAG vs fine-tuning | RAG | Fine-tune | Data changes frequently; interpretability matters |
-| Vector DB vs pgvector | Dedicated (Pinecone, Qdrant) | pgvector | Scale > 10M vectors or need ANN performance |
-| Real-time vs batch | Streaming (Kafka) | Batch (Spark) | SLA < 30s for alert triage |
+| Vector DB vs pgvector | Dedicated (Pinecone, Qdrant) | pgvector | Need managed vector operations, strict latency/filtering, or independent scaling beyond Postgres |
+| Real-time vs batch | Streaming (Kafka) | Batch (Spark) | SLA is seconds/minutes and results must update continuously |
 | Human-in-the-loop | Async review | Fully autonomous | High-stakes actions (blocking IPs, closing tickets) |
 
 ---

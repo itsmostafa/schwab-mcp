@@ -54,7 +54,7 @@ Panther's answer: AI agents that triage at machine speed, learn from analyst dec
 Alert fires → Analyst reviews → Looks up IOCs → Checks context (past alerts, asset info) → Decides true/false → Documents → Escalates or closes
 
 **AI agent flow**:
-Alert fires → Agent fetches enrichment → Searches past similar alerts → Retrieves analyst decisions on similar cases → Scores severity → Auto-closes low confidence FPs → Routes high-confidence TPs with context summary
+Alert fires → Agent fetches enrichment → Searches past similar alerts → Retrieves analyst decisions on similar cases → Classifies risk with evidence → Auto-closes only high-confidence benign/low-risk alerts within policy → Routes risky or inconclusive alerts with context summary
 
 ## Why Go + Python Matter Here
 

@@ -1,6 +1,6 @@
 ---
 type: plan
-last-updated: 2026-04-25
+last-updated: 2026-04-26
 tags: [prep, ai-integration, systems-design]
 ---
 
@@ -44,7 +44,7 @@ Alert fires
   → prompt assembly (shared base + task module + tenant policy + evidence)
   → LLM → structured JSON output (classification, confidence, rationale, evidence IDs)
   → policy gate (confidence threshold, severity, allowed action scope)
-  → analyst review / auto-close / escalation / ticket
+  → analyst review / auto-close only high-confidence benign cases / escalation / ticket
   → feedback capture → eval dataset → model/index update
 ```
 
@@ -63,7 +63,7 @@ Key narration beats to hit:
 
 **1. RAG pipeline design**
 - Chunking strategies: fixed-size+overlap (simple) vs semantic/hierarchical (better recall for docs)
-- Embedding models: OpenAI text-embedding-3, BGE; domain-specific matters for security data
+- Embedding models: OpenAI `text-embedding-3-small` / `text-embedding-3-large`, BGE-style open models; domain-specific evaluation matters for security data
 - Hybrid retrieval: BM25 for exact keywords (IOCs, detection IDs) + vector for semantic similarity
 - Reranking: cross-encoder after initial retrieval improves precision, costs latency
 - Filtering: always pre-filter by tenant, time range, severity before vector search
@@ -86,7 +86,7 @@ For "12 monolithic prompt strings that drift independently":
 
 **4. Production metrics — name both AI and SOC metrics**
 - Offline (pre-launch): precision/recall by severity, false-negative rate, schema-valid output rate
-- Online (post-launch): analyst override rate, auto-close reversal rate, time-to-triage, p99 latency
+- Online (post-launch): analyst override rate, auto-close reversal rate, time-to-triage, latency against the stated SLA
 - Safety: unauthorized tool attempt rate, prompt-injection detection rate, policy-gate blocks
 - Drift signals: classification distribution shift, retrieval hit-rate drop, tenant-specific degradation
 
@@ -174,12 +174,12 @@ Components: log ingestion → normalization/parsing → schema-on-read vs schema
 |----------|----------|----------|----------------|
 | Latency vs accuracy | Smaller/faster model | Larger/slower model | High alert volume, first-pass triage |
 | RAG vs fine-tuning | RAG | Fine-tune | Data changes frequently; interpretability matters |
-| Vector DB vs pgvector | Dedicated (Qdrant, Pinecone) | pgvector | > 10M vectors, need ANN performance |
-| Streaming vs batch | Kafka + Flink | Spark batch | SLA < 30s |
+| Vector DB vs pgvector | Dedicated (Qdrant, Pinecone) | pgvector | Need managed vector ops, strict latency/filtering, or independent scaling beyond Postgres |
+| Streaming vs batch | Kafka + Flink | Spark batch | SLA is seconds/minutes and results must update continuously |
 | Human-in-the-loop | Async review | Fully autonomous | High-stakes actions (blocking IPs, closing tickets) |
 
 ### Numbers to know
-- p99 triage latency target: < 5s
+- Latency target: clarify first; use "seconds for first-pass enrichment, minutes for analyst-facing triage" as a defensible assumption if no SLA is given
 - 1M events/day ≈ 11.5 events/second
 - 1B events/day ≈ 11,500 events/second
 - L1 cache: ~1ns, RAM: ~100ns, SSD read: ~100μs, network same-DC: ~0.5ms
@@ -255,7 +255,7 @@ Goal: pure recall under conditions that approximate the interview.
 |---|---|
 | 0:00–0:10 | Say all 3 scaffolds out loud, no notes. Warm-up and overnight-consolidation check. |
 | 0:10–0:40 | **Round 3 mock — solo, out loud, timer on.** Pick 3 of the 6 likely questions above. Answer each in 3–4 min. No notes. Then check the wiki and note what you missed. |
-| 0:40–1:10 | **Round 4 mock — 25 min timed.** Prompt: *"Design a real-time alert triage system: 1B events/day, 100 customers, p99 < 5s."* Use the 6-step. Whiteboard or type. Out loud throughout. |
+| 0:40–1:10 | **Round 4 mock — 25 min timed.** Prompt: *"Design a real-time alert triage system: 1B events/day, 100 customers, first-pass enrichment in seconds and analyst-ready triage in minutes."* Use the 6-step. Whiteboard or type. Out loud throughout. |
 | 1:10–1:30 | Personal story rep: say it out loud once without notes. Then once more to a mirror or webcam. |
 | 1:30–2:00 | **Tradeoff drill.** Cover the tradeoff table above. For each row, invent a hypothetical context and say out loud which you'd pick and why. Should feel automatic by the end. |
 
