@@ -4,6 +4,12 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-25] plan | 36-hour compressed prep plan created for back-to-back Rounds 3 & 4
+
+Designed a memory-retention-optimized study plan for ~36-hour window with both rounds same day. Key insight from audit: wiki content is strong; the gap is rehearsed retrieval under pressure. Plan built around 3 anti-blank scaffolds (Universal Opener, Triage Rosary, Systems Design 6-Step), 4 study blocks (~7 hrs total), two protected sleep nights, and a deliberate between-round reset protocol. All study is retrieval-based (no re-reading). Personal system story draft is the single highest-priority Block A action.
+
+---
+
 ## [2026-04-25] resource | Guided study prompt created for Rounds 3 & 4
 
 Created wiki/study-prompt.md — a self-contained paste-ready prompt for any AI chat session. Sets up Socratic quiz mode, mock interview mode, whiteboard narration, and weak-spots drill. Embeds the triage agent anchor design, all 10 AI Integration topics, all 5 systems design scenarios, and explicit rubrics for strong vs weak answers for both rounds.
