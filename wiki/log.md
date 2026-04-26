@@ -4,6 +4,12 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-26] query | Prep plan method audit
+
+Audited wiki/prep-plan.md against the official candidate prep guide, job description, referral notes, and round-specific wiki pages. Verdict: close to the best practical 36-hour plan for AI Integration and Systems Design because it prioritizes active retrieval, out-loud mocks, a canonical alert triage design, tradeoffs, failure modes, and sleep. Added wiki/audits/prep-plan-method-audit.md with remaining gaps: Panther questions drill, one interviewer-assisted mock, stronger personal story emphasis, no live AI-generated answers, and a non-triage systems-design mock.
+
+---
+
 ## [2026-04-26] audit | AI/system design concepts externally validated
 
 Created wiki/audits/ai-system-design-validation.md with a primary-source claim register for AI Integration and Systems Design material. Validated Panther role/product claims, RAG/tool-calling/MCP/prompt-injection/vector-index concepts, and systems-design heuristics. Corrected overstatements around auto-close confidence, fixed latency/vector-count thresholds to be explicit assumptions, clarified RAG vs fine-tuning, MCP, tool-calling execution boundaries, and structured reasoning vs chain-of-thought.
