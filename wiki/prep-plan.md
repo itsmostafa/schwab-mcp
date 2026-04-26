@@ -186,73 +186,159 @@ Components: log ingestion → normalization/parsing → schema-on-read vs schema
 
 ---
 
-## Study & Retention Strategy
+## The Three Anti-Blank Scaffolds (memorize these cold)
 
-### Core principle: retrieval beats re-reading
+When nerves hit, your prefrontal cortex temporarily checks out. These scaffolds are muscle memory that buys 30–60 seconds while it comes back online.
 
-Reading notes again doesn't build fluency. What builds fluency is retrieving information under pressure. Every study session should have more talking/writing than reading.
+### Scaffold 1: The Universal Opener (use for ANY question, both rounds)
 
-### Technique stack
+> "Great question. Before I dive in, let me make sure I'm solving the right problem — can I clarify a couple of things? *[ask 2–3 clarifying questions about scale, latency, and what we can't get wrong].* Okay, so I'm hearing X. Let me think about this in three layers: the architecture, the tradeoffs, and how this runs in production."
 
-**1. Whiteboard the anchor design from memory (daily)**
-Close all notes. Draw the alert triage agent end-to-end. Narrate it out loud. Then check what you missed.
-This single exercise covers ~70% of both rounds. 15 min/day.
+Buys 60 seconds, signals seniority, and locks you into the right frame every time.
 
-**2. Question-first review**
-Don't re-read notes top-to-bottom. Open the "Likely Questions" section, pick one, close everything, and answer it out loud for 2-3 minutes before looking. This mirrors what you'll be doing in the actual interview.
+### Scaffold 2: The Triage Agent Rosary (nine beads, say it until automatic)
 
-**3. Personal story polish (for Round 3)**
-Write the story down once in your own words. Then practice saying it out loud 3+ times without reading. Time it — it should land in under 5 minutes.
+> **Intake → Enrichment → Hybrid Retrieval → Rerank/Summarize → Prompt Assembly → LLM → Policy Gate → Analyst/Action → Feedback Loop**
 
-**4. Systems design mock run**
-Pick one of the 5 design scenarios. Set a 25-min timer. Use the 6-step process (clarify → restate → high-level → deep dive → tradeoffs → ops). Talk out loud or type your answer. Grade yourself: did you clarify first? Did you name tradeoffs? Did you surface failure modes?
+For each bead: know what runs there and one tradeoff. That's all you need.
 
-**5. Teach-back test**
-If you can't explain RAG, the agent loop, or hybrid retrieval to a non-technical PM in 60 seconds, you don't know it cold enough. Practice this. It also prepares you for the communication signal Panther evaluates.
+### Scaffold 3: The Systems-Design 6-Step (Round 4 only)
 
-**6. Tradeoff flashcards**
-For every key decision in the tradeoffs table, practice: given a context, which do you choose and why? The answer should come automatically, not feel calculated.
+> **Clarify → Restate → High-level → Deep dive → Tradeoffs → Operational concerns**
 
-### Session plan (days until Round 3)
+If you blank in Round 4: "Let me work through this systematically — first I want to clarify…" and follow in order. A mediocre answer in this structure beats a brilliant one without it.
 
-**Day 1 (today): Foundation**
-- Read `rounds/ai-integration.md` and `concepts/agentic-ai.md` fully — once
-- Whiteboard the triage agent from memory (first pass will be rough — that's fine)
-- Write your personal system story draft
+---
 
-**Day 2: AI Integration depth**
-- Answer all 6 likely questions out loud without notes
-- Practice the "50K events" answer, prompt architecture answer, and metrics answer
-- Refine your personal system story — say it out loud 3x
+## 36-Hour Study Schedule
 
-**Day 3: Systems Design depth**
-- Run the 6-step mock on "real-time alert triage system" (25 min)
-- Run it again on "text-to-search" (25 min)
-- Review tradeoffs table until each answer is automatic
+**Core principle: retrieval beats re-reading.** The wiki is ready. These sessions are almost entirely talking/writing, not reading. If your eyes are on the page > 30% of a session, you're doing it wrong.
 
-**Day 4: Integration**
-- Full mock: AI Integration likely questions, no notes (30 min)
-- Full mock: Systems design with a new scenario (25 min)
-- Fill any gaps you discovered
+**Memory-retention techniques embedded in the schedule:**
 
-**Day before each interview: Light polish**
-- Re-read `rounds/ai-integration.md` or `rounds/systems-design.md` (not the deep dives — just the signals and checklist)
-- Whiteboard the triage agent one more time
-- Say your personal story out loud twice
-- Sleep — cramming the night before degrades performance
+| Technique | Where used |
+|---|---|
+| Active retrieval | Every block — close the notes, then talk |
+| Spaced repetition | Each anchor concept hit in ≥3 separate sessions with sleep between |
+| Sleep consolidation | Both nights protected at 7+ hours — non-negotiable |
+| Pre-sleep encoding | Last 10 min before sleep = rosary + 6-step only |
+| Generation effect | Write the personal story by hand; write the cheat sheet from memory |
+| Dual coding | Whiteboard the triage agent *while* narrating out loud |
+| Interleaving | Round 3 and Round 4 topics mixed within sessions |
+| Realistic test conditions | Timed mocks, no notes, out loud |
+
+---
+
+### Block A — Tonight, ~3 hours (Encoding & Generation)
+
+Goal: generate the assets you'll rehearse from. Touch every topic once to refresh, not to learn.
+
+| Time | Activity |
+|---|---|
+| 0:00–0:25 | Re-read this prep-plan and `rounds/ai-integration.md` — once, skimming. Don't try to memorize. |
+| 0:25–0:50 | Whiteboard the alert triage agent from memory. Then check lines 38–49 above. Note gaps. Redraw with gaps filled. |
+| 0:50–1:30 | **Write your personal system story by hand** (paper or doc). Use the 6-step structure. 400–600 words. |
+| 1:30–1:50 | Read it once. Then say it out loud, timed. Target: 3:30–4:30. Trim hard if it runs long. |
+| 1:50–2:20 | Skim the 3 micro-gaps: MCP (1 paragraph), confidence scoring (logprobs / self-consistency / verifier model), async inference (background enrichment, streaming partials). One sentence each only. |
+| 2:20–2:50 | Rehearse the 3 scaffolds out loud, eyes closed — 5 reps each. Universal Opener, Rosary, 6-Step. |
+| 2:50–3:00 | Pre-sleep review: read just the rosary and the 6-step one final time, in bed, then lights out. |
+
+**Sleep: 7–8 hours. This night does more for retention than any extra study hour.**
+
+---
+
+### Block B — Tomorrow morning, ~2 hours (Active Retrieval)
+
+Goal: pure recall under conditions that approximate the interview.
+
+| Time | Activity |
+|---|---|
+| 0:00–0:10 | Say all 3 scaffolds out loud, no notes. Warm-up and overnight-consolidation check. |
+| 0:10–0:40 | **Round 3 mock — solo, out loud, timer on.** Pick 3 of the 6 likely questions above. Answer each in 3–4 min. No notes. Then check the wiki and note what you missed. |
+| 0:40–1:10 | **Round 4 mock — 25 min timed.** Prompt: *"Design a real-time alert triage system: 1B events/day, 100 customers, p99 < 5s."* Use the 6-step. Whiteboard or type. Out loud throughout. |
+| 1:10–1:30 | Personal story rep: say it out loud once without notes. Then once more to a mirror or webcam. |
+| 1:30–2:00 | **Tradeoff drill.** Cover the tradeoff table above. For each row, invent a hypothetical context and say out loud which you'd pick and why. Should feel automatic by the end. |
+
+---
+
+### Block C — Tomorrow afternoon/evening, ~1.5 hours (Polish + Cheat Sheet)
+
+Goal: compress everything into one handwritten page and run one final mock.
+
+| Time | Activity |
+|---|---|
+| 0:00–0:40 | **Build a 1-page cheat sheet by hand, from memory.** Must include: the rosary, the 6-step, the Universal Opener, the 4 metric axes (offline/online/safety/drift) with one example each, one prompt-injection sentence, the 5 numbers above, the personal-story 6-beat outline. Write it from memory, then check. The act of compressing is the retention. |
+| 0:40–1:10 | **Second Round 4 mock** on a different prompt (text-to-search or detection-code-generation). Same 25-min timer. Out loud. |
+| 1:10–1:30 | **Failure-mode drill.** For the design you just produced, name 5 things that could go wrong and how you'd detect/recover each. ("Failure Mode Awareness" is an explicit Round 4 rubric signal.) |
+
+**No studying past 9pm. Re-read the cheat sheet for 5 min in bed, then lights out.**
+
+**Sleep: 7–8 hours. This is the night that matters most.**
+
+---
+
+### Block D — Interview day, ~30 min (Activation only — no new material)
+
+| Time | Activity |
+|---|---|
+| Wake → +20 min | Coffee/water/protein. Say the 3 scaffolds out loud. Then narrate the rosary while sketching the triage agent on paper — 4 min max. |
+| +20 → +30 min | Re-read your cheat sheet once, slowly. Then put it away. |
+| 15 min before Round 3 | 4-7-8 breathing × 4 cycles (inhale 4s, hold 7s, exhale 8s). Sip water. Small snack (nuts, banana). |
+
+---
+
+## Between-Round Reset
+
+You'll be cognitively fatigued after Round 3. Round 4 needs your clearest thinking.
+
+**5 minutes between rounds:**
+1. Stand up and move — different room or step outside.
+2. **Do not replay Round 3.** Whatever happened, happened. Rumination steals working memory.
+3. Hydrate. Small snack.
+4. 4-7-8 breathing × 2 cycles.
+5. Re-read your cheat sheet for 60 seconds — only the 6-step and the rosary.
+6. Say out loud: *"Clarify first. Then restate. Then high-level."* Walk back in.
+
+---
+
+## What We Are Deliberately NOT Doing
+
+- **No deep dive on MCP, async inference, or capacity-math.** One-sentence inoculation only — new material under stress is a net negative.
+- **No re-reading `agentic-ai.md` or `systems-design-patterns.md` end-to-end.** Use them as lookups only if a mock surfaces a gap.
+- **No more than 2 timed systems-design mocks.** Sleep beats mock #3.
+- **No new design scenarios beyond the 5 above.** The anchor is enough.
+- **No studying past 9pm the night before.** Cortisol from late study impairs the sleep that matters most.
+- **No wiki review the morning of.** New retrieval failures right before the interview shake confidence. Cheat sheet only.
+
+---
+
+## Verification Checklist
+
+By end of Block C, you should be able to do all of these without notes:
+
+- [ ] Recite the Triage Agent Rosary in < 20 seconds.
+- [ ] Recite the Systems-Design 6-Step in < 10 seconds.
+- [ ] Deliver the Universal Opener verbatim in one breath.
+- [ ] Whiteboard the alert triage agent end-to-end in < 4 min, naming one tradeoff per stage.
+- [ ] Tell your personal system story in 3:30–4:30, eye contact forward.
+- [ ] Name the 4 metric axes and give one example metric per axis.
+- [ ] Pick the right side of all 5 tradeoff-table rows given an arbitrary scenario.
+- [ ] List 5 failure modes for the alert triage system and how you'd detect each.
+
+If any item fails at the end of Block C: rehearse that item three more times out loud. Do **not** pull a new wiki page.
 
 ---
 
 ## Day-of Checklist
 
-**AI Integration**
+**AI Integration (Round 3)**
 - [ ] Can I narrate the triage agent end-to-end without notes?
 - [ ] Do I have a 3-5 min personal story ready?
 - [ ] Do I know my production metrics (offline + online + safety + drift)?
 - [ ] Can I describe the prompt architecture answer?
 - [ ] Can I explain prompt injection risk and the defense?
 
-**Systems Design**
+**Systems Design (Round 4)**
 - [ ] Will I ask clarifying questions before drawing anything?
 - [ ] Do I have a tradeoff ready for every major design decision?
 - [ ] Can I name failure modes and monitoring for the system I design?
