@@ -219,6 +219,7 @@ Log every tool call and its result. In a SOC context, this is also your audit tr
 
 ## See Also
 
+- [[concepts/tool-calling-cheat-sheet]] — quick recall sheet for tool calls
 - [[concepts/agentic-ai]] — agent loop, planning strategies, memory types
 - [[rounds/ai-integration]] — AI integration interview; tool calling is likely to come up here
 - [[panther/role]] — Panther's 4 SOC agent capabilities; tool boundaries are relevant to each

@@ -70,3 +70,7 @@
 - [ ] Quantify impact with real numbers where possible
 - [ ] Prepare the "what would you do differently" answer honestly
 - [ ] Practice telling the story in under 5 minutes (they'll ask follow-ups)
+
+## Candidate Story Bank
+
+- [[projects/cset-ai-chatbot-story]] — CISA/DHS CSET RAG chatbot; strongest fit for AI Integration and also usable for Project Retro if duration/stakeholder criteria are confirmed.

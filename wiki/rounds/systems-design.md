@@ -97,5 +97,6 @@ Key components: log ingestion, normalization/parsing, schema-on-read vs schema-o
 
 ## See Also
 
+- [[rounds/round-4-cheat-sheet]] — final-scan cheat sheet for this interview
 - [[concepts/systems-design-patterns]] — patterns library
 - [[concepts/soc-domain]] — SOC domain context for designing around the right problems

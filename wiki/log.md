@@ -4,6 +4,36 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-27] resource | CSET AI chatbot interview story created
+
+Researched private GitHub repo `itsmostafa/cset-ai-chatbot` and CISA CSET public context. Created wiki/projects/cset-ai-chatbot-story.md with a Round 3 AI Integration talk track, 60-second version, architecture anchor, tradeoffs, likely follow-up answers, Panther bridge, and overclaiming guardrails. Updated wiki/index.md, wiki/rounds/ai-integration.md, and wiki/rounds/project-retro.md.
+
+---
+
+## [2026-04-27] update | CSET story NIST document context added
+
+Updated wiki/projects/cset-ai-chatbot-story.md to clarify that the uploaded knowledge-base PDFs were NIST-related cybersecurity guidance intended to help public and private organizations improve cybersecurity posture.
+
+---
+
+## [2026-04-27] resource | Tool calling cheat sheet created
+
+Created wiki/concepts/tool-calling-cheat-sheet.md as a concise recall sheet for tool-call mechanics, tool schema anatomy, read/write tool boundaries, SOC tool inventory, handler rules, parallel calls, failure modes, security guardrails, testing strategy, and interview answer templates. Updated wiki/index.md and linked it from wiki/concepts/tool-calling.md.
+
+---
+
+## [2026-04-27] resource | Round 4 systems design cheat sheet created
+
+Created wiki/rounds/round-4-cheat-sheet.md as a final-scan guide for the Round 4 Systems Design interview. Covers the universal opener, 6-step interview flow, Panther-style alert triage anchor architecture, scenario cards, component deep dives, tradeoff bank, failure modes, metrics, useful scale numbers, red flags, and strong closing questions. Updated wiki/index.md and wiki/rounds/systems-design.md to link the new page.
+
+---
+
+## [2026-04-27] resource | Round 3 AI Integration cheat sheet generated
+
+Created wiki/rounds/round-3-cheat-sheet.md as a last-minute interview reference for the AI Integration round. Condenses the full Round 3 guide into answer frames, canonical alert-triage architecture, RAG/token-budget handling, prompt architecture, tool-calling guardrails, AI security, evaluation metrics, feedback loops, Panther-specific hooks, likely questions, and red flags. Updated wiki/index.md and linked it from wiki/rounds/ai-integration.md.
+
+---
+
 ## [2026-04-26] query | Prep plan method audit
 
 Audited wiki/prep-plan.md against the official candidate prep guide, job description, referral notes, and round-specific wiki pages. Verdict: close to the best practical 36-hour plan for AI Integration and Systems Design because it prioritizes active retrieval, out-loud mocks, a canonical alert triage design, tradeoffs, failure modes, and sleep. Added wiki/audits/prep-plan-method-audit.md with remaining gaps: Panther questions drill, one interviewer-assisted mock, stronger personal story emphasis, no live AI-generated answers, and a non-triage systems-design mock.

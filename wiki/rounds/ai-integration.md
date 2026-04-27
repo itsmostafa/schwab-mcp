@@ -176,6 +176,8 @@ For most questions, use this structure:
 
 ## See Also
 
+- [[rounds/round-3-cheat-sheet]] — last-minute cheat sheet for this round
+- [[projects/cset-ai-chatbot-story]] — personal AI/RAG system story for Round 3
 - [[concepts/agentic-ai]] — deep reference on AI agents
 - [[concepts/tool-calling]] — tool design, agent loop, read vs. write tools
 - [[concepts/soc-domain]] — SOC workflow and Panther product context
