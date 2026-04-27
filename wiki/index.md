@@ -22,7 +22,7 @@ Master catalog of all pages. Updated on every ingest or major addition.
 
 ## Project Stories
 
-- [CSET AI Chatbot Story](projects/cset-ai-chatbot-story.md) — Interview-ready story for the CISA/DHS CSET RAG chatbot project
+- [CSET AI Chatbot Story](projects/cset-ai-chatbot-story.md) — Quick-reference interview points for the CISA/DHS CSET RAG chatbot project
 
 ## Concepts
 

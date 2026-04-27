@@ -7,19 +7,74 @@
 
 ## Interview Version
 
-> "A project I would use for this round is an AI knowledge assistant I built around CISA's Cyber Security Evaluation Tool, or CSET. CSET is used by asset owners and operators to evaluate IT and OT security posture, and the documents I loaded were NIST-related cybersecurity guidance PDFs meant to help public and private organizations improve their cybersecurity stance. A lot of that useful knowledge lives in dense PDFs, assessment guidance, tables, and standards-oriented documentation. The problem was not just 'put a chatbot in front of a PDF.' The real problem was how to make retrieval accurate enough that a cybersecurity user could trust the answer and inspect where it came from."
->
-> "I built it as a FastAPI service with a RAG pipeline behind it. The ingestion path accepts PDFs, runs them through Docling with OCR and table-structure extraction, chunks them with a structure-aware hybrid chunker, embeds the chunks with `mxbai-embed-large-v1`, and stores them in Redis Stack as a vector index with metadata like filename, page, token count, and chunk id. On the query path, the pydantic-ai agent calls a `query_documents` tool. That tool embeds the query, retrieves the top 10 candidates from Redis using cosine similarity, then reranks them with a Hugging Face cross-encoder and passes the top 5 into the LLM context. The chat response streams back over SSE and the system tracks source filename and page citations."
->
-> "The main design decision was to separate retrieval from generation. I did not want the LLM browsing the whole document mentally or relying on memory. Deterministic code handles PDF parsing, chunking, indexing, retrieval, reranking, response streaming, persistence, and error paths. The LLM is used for synthesis over already-selected evidence. That is the same line I would draw in a SOC product: let code enforce boundaries and let the model explain, summarize, and reason over bounded context."
->
-> "A second tradeoff was retrieval quality versus latency. Basic vector search was fast, but for policy and security documentation, semantically similar chunks are not always the most answer-worthy chunks. I added a two-stage retrieval pipeline: bi-encoder retrieval for recall, cross-encoder reranking for precision. That adds cost and latency, but it improves the quality of the final context and makes the answer more defensible."
->
-> "The third tradeoff was ingestion quality versus implementation complexity. CSET documents include scanned text and tables, so simple PDF text extraction would lose structure or produce bad reading order. I used Docling with OCR and table detection, then hybrid chunking that respects document structure before splitting by token budget. That made the retrieved chunks much closer to how a human would cite the material."
->
-> "I also added production-minded pieces: MongoDB conversation history, Redis append semantics so uploading one PDF does not wipe the existing index, streaming responses so users are not blocked waiting for the full answer, Phoenix/OpenInference tracing for agent runs and tool calls, and a mocked unit test suite around ingestion, streaming behavior, PDF validation, source events, timeout/error propagation, and conversation logging."
->
-> "What I would improve next is evaluation. The system has unit tests, but the next production step would be a retrieval and answer-quality eval set: known CSET questions, expected source pages, citation faithfulness, answer relevance, and refusal behavior when the docs do not contain the answer. I would also tighten security around prompt injection because in a security domain, document text and future user-provided artifacts should be treated as untrusted input."
+Use this as a quick-reference outline, not a script.
+
+**Opening hook**
+- Built an AI knowledge assistant around CISA's Cyber Security Evaluation Tool (CSET).
+- CSET helps asset owners/operators evaluate IT and OT cybersecurity posture.
+- Documents were NIST-related cybersecurity guidance PDFs for public/private org security improvement.
+- Core problem: not "chat with a PDF"; make retrieval trustworthy, inspectable, and citation-backed for cybersecurity users.
+
+**Architecture**
+- Backend: FastAPI service with a RAG pipeline.
+- Agent: pydantic-ai agent using a `query_documents` tool.
+- Storage: Redis Stack for vector index, MongoDB for conversation history.
+- Streaming: SSE response deltas plus source filename/page events.
+- Observability: Phoenix/OpenInference tracing for agent runs and tool calls.
+
+**Ingestion path**
+- Accept PDF upload through `/api/load-data/`.
+- Validate and stage temp file.
+- Parse with Docling using OCR + table-structure extraction.
+- Chunk with structure-aware hybrid chunker and `mxbai` tokenizer.
+- Embed with `mxbai-embed-large-v1`.
+- Store in Redis with metadata: filename, page, token count, chunk id.
+- Append semantics: adding one PDF does not wipe the existing index.
+
+**Query path**
+- User asks question through `/api/chat/`.
+- Save user message to MongoDB.
+- Agent calls `query_documents`.
+- Embed query.
+- Redis cosine search retrieves top 10 candidates.
+- Hugging Face cross-encoder reranks for precision.
+- Top 5 chunks go into LLM context.
+- LLM synthesizes over bounded evidence and returns cited answer.
+- Save assistant message to MongoDB.
+
+**Main design principle**
+- Separate retrieval from generation.
+- Deterministic code owns parsing, chunking, indexing, retrieval, reranking, citations, streaming, persistence, and errors.
+- LLM only synthesizes over selected evidence.
+- Panther bridge: same boundary applies to SOC agents; code enforces access/tool boundaries, model explains and reasons over bounded context.
+
+**Tradeoff 1: retrieval quality vs latency**
+- Basic vector search is faster.
+- Security/policy docs need precision because semantically similar chunks can be misleading.
+- Two-stage retrieval: bi-encoder for recall, cross-encoder for precision.
+- Accepted extra latency to make answers more defensible.
+
+**Tradeoff 2: ingestion quality vs complexity**
+- CSET docs can include scanned pages, tables, and standards-style layouts.
+- Simple PDF extraction risks bad reading order and lost structure.
+- Docling OCR/table extraction plus hybrid chunking makes chunks more human-citable.
+
+**Production-minded pieces**
+- MongoDB conversation history.
+- Redis append mode for multi-document growth.
+- SSE streaming for perceived latency and source events.
+- Phoenix/OpenInference traces.
+- Unit tests around ingestion, streaming, PDF validation, source events, timeout/error propagation, and conversation logging.
+- CPU-only Torch pinning / Docker Compose setup.
+
+**What to improve next**
+- Add retrieval and answer-quality eval set.
+- Start with 50-100 representative CSET questions.
+- Track expected source pages, retrieval hit rate at top-k, citation faithfulness, answer relevance, latency, schema validity, and refusal behavior.
+- Add stronger prompt-injection boundaries because document text and future user-provided artifacts are untrusted input.
+
+**Best one-line close**
+- "The key lesson was that in security workflows, AI value depends less on having a chatbot and more on controlling the evidence path: what was retrieved, why it was trusted, and how the user can audit the answer."
 
 ## 60-Second Version
 

@@ -34,6 +34,12 @@ Created wiki/rounds/round-3-cheat-sheet.md as a last-minute interview reference 
 
 ---
 
+## [2026-04-27] update | CSET chatbot interview version converted to quick-reference outline
+
+Reworked wiki/projects/cset-ai-chatbot-story.md so the Interview Version is no longer a long spoken script. It now highlights the opening hook, architecture, ingestion/query paths, design principle, tradeoffs, production-minded pieces, next improvements, and the strongest closing line for quick interview recall.
+
+---
+
 ## [2026-04-26] query | Prep plan method audit
 
 Audited wiki/prep-plan.md against the official candidate prep guide, job description, referral notes, and round-specific wiki pages. Verdict: close to the best practical 36-hour plan for AI Integration and Systems Design because it prioritizes active retrieval, out-loud mocks, a canonical alert triage design, tradeoffs, failure modes, and sleep. Added wiki/audits/prep-plan-method-audit.md with remaining gaps: Panther questions drill, one interviewer-assisted mock, stronger personal story emphasis, no live AI-generated answers, and a non-triage systems-design mock.
