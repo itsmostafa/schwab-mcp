@@ -4,6 +4,12 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-27] ingest | Round 3 and Round 4 interview questions
+
+Ingested raw/round-3-interview-questions.md and raw/round-4-interview-questions.md into maintained wiki question banks. Created wiki/rounds/round-3-interview-questions.md and wiki/rounds/round-4-interview-questions.md with spoken-answer drills for AI Integration and Systems Design. Updated wiki/index.md, wiki/rounds/ai-integration.md, and wiki/rounds/systems-design.md with links to the new question banks.
+
+---
+
 ## [2026-04-27] resource | CSET AI chatbot interview story created
 
 Researched private GitHub repo `itsmostafa/cset-ai-chatbot` and CISA CSET public context. Created wiki/projects/cset-ai-chatbot-story.md with a Round 3 AI Integration talk track, 60-second version, architecture anchor, tradeoffs, likely follow-up answers, Panther bridge, and overclaiming guardrails. Updated wiki/index.md, wiki/rounds/ai-integration.md, and wiki/rounds/project-retro.md.

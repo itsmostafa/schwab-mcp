@@ -14,8 +14,10 @@ Master catalog of all pages. Updated on every ingest or major addition.
 
 - [Live Coding Round](rounds/live-coding.md) — ✅ DONE — CoderPad, StackExchange API, 60 min, 7 evaluation dimensions
 - [AI Integration Interview](rounds/ai-integration.md) — AI agent design, RAG, embeddings; Panther's specific AI stack
+- [Round 3 Interview Questions](rounds/round-3-interview-questions.md) — Spoken-answer drill bank for AI Integration: RAG, evals, security, prompt architecture, feedback loops
 - [Round 3 Cheat Sheet](rounds/round-3-cheat-sheet.md) — Quick recall sheet for the AI Integration interview
 - [Systems Design](rounds/systems-design.md) — Most revealing round per Darwayne; open-ended, approach matters most
+- [Round 4 Interview Questions](rounds/round-4-interview-questions.md) — Spoken-answer drill bank for Systems Design: clarification, architecture, enrichment, retrieval, failure modes
 - [Round 4 Cheat Sheet](rounds/round-4-cheat-sheet.md) — Final-scan systems design cheat sheet: opener, anchor architecture, scenario cards, tradeoffs, metrics, failure modes
 - [Project Retrospective](rounds/project-retro.md) — Walk through a past project; preparation for what to pick and how to frame it
 - [Culture Round](rounds/culture.md) — Panther's 3 values, behavioral questions, what they're assessing
