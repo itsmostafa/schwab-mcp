@@ -1,12 +1,12 @@
 ---
 type: audit
 last-updated: 2026-04-26
-tags: [audit, ai-integration, systems-design, validation]
+tags: [audit, systems-design, validation]
 ---
 
-# AI/System Design Validation Audit
+# Systems Design Validation Audit
 
-Scope: AI and system-design concepts across `wiki/rounds/ai-integration.md`, `wiki/rounds/systems-design.md`, `wiki/prep-plan.md`, `wiki/study-prompt.md`, and linked concept/company pages.
+Scope: system-design concepts across `wiki/rounds/systems-design.md`, `wiki/prep-plan.md`, `wiki/study-prompt.md`, and linked concept/company pages.
 
 Source standard: primary-first external sources. Private/raw interview material is allowed only for interview-process context, not as public technical validation.
 

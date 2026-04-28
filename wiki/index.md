@@ -5,26 +5,21 @@ Master catalog of all pages. Updated on every ingest or major addition.
 ## Overview
 
 - [Overview](overview.md) — Company, role, full interview process, current status, and priorities
-- [Prep Plan](prep-plan.md) — Study plan + retention strategy for AI Integration (Round 3) and Systems Design (Round 4)
-- [Study Prompt](study-prompt.md) — Paste-ready prompt to run a guided AI study session for Rounds 3 & 4
-- [AI/System Design Validation Audit](audits/ai-system-design-validation.md) — Source-backed audit of AI integration and system-design concepts
-- [Prep Plan Method Audit](audits/prep-plan-method-audit.md) — Assessment of whether the compressed study plan is the strongest practical prep strategy
+- [Prep Plan](prep-plan.md) — Study plan and practice structure for Systems Design
+- [Study Prompt](study-prompt.md) — Paste-ready prompt to run a guided Systems Design study session
+- [Systems Design Validation Audit](audits/ai-system-design-validation.md) — Source-backed audit of system-design concepts
 
 ## Interview Rounds
 
 - [Live Coding Round](rounds/live-coding.md) — ✅ DONE — CoderPad, StackExchange API, 60 min, 7 evaluation dimensions
-- [AI Integration Interview](rounds/ai-integration.md) — AI agent design, RAG, embeddings; Panther's specific AI stack
-- [Round 3 Interview Questions](rounds/round-3-interview-questions.md) — Spoken-answer drill bank for AI Integration: RAG, evals, security, prompt architecture, feedback loops
-- [Round 3 Cheat Sheet](rounds/round-3-cheat-sheet.md) — Quick recall sheet for the AI Integration interview
-- [Systems Design](rounds/systems-design.md) — Most revealing round per Darwayne; open-ended, approach matters most
+- [Systems Design](rounds/systems-design.md) — 🔥 NEXT — Most revealing round per Darwayne; open-ended, approach matters most
 - [Round 4 Interview Questions](rounds/round-4-interview-questions.md) — Spoken-answer drill bank for Systems Design: clarification, architecture, enrichment, retrieval, failure modes
 - [Round 4 Cheat Sheet](rounds/round-4-cheat-sheet.md) — Final-scan systems design cheat sheet: opener, anchor architecture, scenario cards, tradeoffs, metrics, failure modes
-- [Project Retrospective](rounds/project-retro.md) — Walk through a past project; preparation for what to pick and how to frame it
 - [Culture Round](rounds/culture.md) — Panther's 3 values, behavioral questions, what they're assessing
 
 ## Project Stories
 
-- [CSET AI Chatbot Story](projects/cset-ai-chatbot-story.md) — Quick-reference interview points for the CISA/DHS CSET RAG chatbot project
+- [CSET AI Chatbot Story](projects/cset-ai-chatbot-story.md) — Quick-reference CEO conversation points for the CISA/DHS CSET RAG chatbot project
 
 ## Concepts
 

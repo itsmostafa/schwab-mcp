@@ -18,9 +18,7 @@ wiki/                       # LLM-maintained wiki — you own this
   overview.md               # Big picture: company, role, full interview structure
   rounds/                   # One page per interview round
     live-coding.md          # Friday's 60-min CoderPad round (most urgent)
-    ai-integration.md       # AI Integration interview
     systems-design.md       # Systems design round
-    project-retro.md        # Project retrospective round
     culture.md              # Culture fit round
   concepts/                 # Deep-dive reference pages
     stackexchange-api.md    # StackExchange API v2.3 — GET /search reference + practice
@@ -38,17 +36,17 @@ wiki/                       # LLM-maintained wiki — you own this
 - **Company**: Panther Labs — AI SOC platform, raised $140M, remote-first
 - **Role**: AI engineer for SOC automation (alert triage, agentic AI, detection-as-code)
 - **Referral**: Darwayne referred Mostafa; know each other through Jamie + AI work
-- **Interview status**: Live coding round (Round 2) — COMPLETE
-- **Next interview**: AI Integration (Round 3) — upcoming
+- **Interview status**: Live coding, technical design, and project retrospective — COMPLETE
+- **Next interview**: Systems design — upcoming
 - **Final gate**: CEO (founder, former CTO, very AI-focused)
 
 ## Interview Rounds (in order)
 
 1. ~~Chat with EM/VP~~ — DONE (Justin, went well)
 2. ~~Live coding~~ — DONE (CoderPad, StackExchange API)
-3. **AI Integration interview** — NEXT
-4. Systems design — "most revealing" per Darwayne
-5. Project retrospective
+3. ~~Technical design~~ — DONE
+4. **Systems design** — NEXT; "most revealing" per Darwayne
+5. ~~Project retrospective~~ — DONE
 6. Culture
 7. CEO final gate
 
@@ -77,4 +75,4 @@ Check for: contradictions between pages, stale info, orphan pages, concepts ment
 - The index uses one line per page: `- [Title](path) — one-line hook`
 - Log entries start with `## [YYYY-MM-DD]` so they're greppable
 - Raw sources are immutable — never edit files in `raw/`
-- Prioritize the AI Integration round as the next immediate focus
+- Prioritize the Systems Design round as the next immediate focus

@@ -6,7 +6,7 @@ last-updated: 2026-04-26
 
 # Agentic AI
 
-Reference for the AI Integration round and general interview prep.
+Reference for agentic AI concepts that may come up across Panther interviews.
 
 ## Core Agent Loop
 
@@ -107,5 +107,4 @@ How Panther's "collective intelligence framework" could work, inferred from the 
 
 ## See Also
 
-- [[rounds/ai-integration]] — what this round evaluates
 - [[panther/role]] — Panther's specific agent architecture

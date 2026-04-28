@@ -1,6 +1,6 @@
 # CSET AI Chatbot Story
 
-**Use for**: Round 3 AI Integration, Project Retro, and CEO conversation.
+**Use for**: CEO conversation and reusable project narrative.
 
 **Project**: `github.com/itsmostafa/cset-ai-chatbot`  
 **One-liner**: Built a RAG chatbot for CISA's Cyber Security Evaluation Tool (CSET) knowledge base so users could ask natural-language questions over NIST-related cybersecurity guidance PDFs and get grounded, page-cited answers.

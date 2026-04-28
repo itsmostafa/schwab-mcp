@@ -18,9 +18,9 @@
 |---|-------|--------|-------|
 | 1 | Chat with EM/VP (Justin) | ✅ DONE | "Justin seems like an awesome dude." Went well. |
 | 2 | Live coding | ✅ DONE | CoderPad, StackExchange API — see [[rounds/live-coding]] |
-| 3 | **AI Integration** | 🔥 **NEXT** | 45-60 min, technical design discussion — see [[rounds/ai-integration]] |
-| 4 | Systems design | Upcoming | "Most revealing" per Darwayne — see [[rounds/systems-design]] |
-| 5 | Project retrospective | Upcoming | Walk through a real project — see [[rounds/project-retro]] |
+| 3 | Technical design | ✅ DONE | Completed. |
+| 4 | **Systems design** | 🔥 **NEXT** | "Most revealing" per Darwayne — see [[rounds/systems-design]] |
+| 5 | Project retrospective | ✅ DONE | Completed. |
 | 6 | Culture | Upcoming | Panther's 3 values — see [[rounds/culture]] |
 | 7 | CEO final gate | Final | Founder, former CTO, very AI-focused. One late-stage candidate was rejected. |
 
@@ -35,17 +35,13 @@ Per Darwayne, these give a real edge:
 
 ---
 
-## Priorities Right Now (April 24, 2026)
+## Priorities Right Now (April 28, 2026)
 
-Live coding round completed April 25. Remaining rounds in order:
+Live coding and the technical design round are complete. Remaining rounds in order:
 
-1. **AI Integration** — next up. 45-60 min, no coding, technical design discussion about building production-grade AI agents. Clarity of reasoning matters more than perfect syntax.
+1. **Systems design** — "most revealing" per Darwayne. Approach and tradeoff articulation matter most.
 
-2. **Systems design** — "most revealing" per Darwayne. Approach and tradeoff articulation matter most.
-
-3. **Project retrospective** — pick a recent (last 18 months), cross-functional project you led end-to-end. Prepare concrete metrics.
-
-4. **Culture** — 4-6 specific stories mapped to Panther's 3 values: Create Customer Love, Be an Owner, Take Care of the Team.
+2. **Culture** — 4-6 specific stories mapped to Panther's 3 values: Create Customer Love, Be an Owner, Take Care of the Team.
 
 ---
 

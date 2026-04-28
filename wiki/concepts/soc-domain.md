@@ -66,5 +66,4 @@ Alert fires → Agent fetches enrichment → Searches past similar alerts → Re
 ## See Also
 
 - [[panther/company]] — Panther product details
-- [[rounds/ai-integration]] — how domain knowledge applies to AI round
 - [[rounds/systems-design]] — system design prompts for SOC systems

@@ -251,5 +251,4 @@ Runtime returns structured result. Model continues. Policy stays outside the mod
 ## See Also
 
 - [[concepts/tool-calling]] — full reference
-- [[rounds/round-3-cheat-sheet]] — Round 3 AI Integration recall sheet
 - [[concepts/agentic-ai]] — agent loop, RAG, feedback loops
