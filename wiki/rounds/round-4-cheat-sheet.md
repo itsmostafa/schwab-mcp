@@ -21,9 +21,28 @@ tags: [systems-design, round-4, interview-prep, panther]
 - [2. Interview Flow](#2-interview-flow)
 - [3. Anchor Architecture: AI Alert Triage](#3-anchor-architecture-ai-alert-triage)
 - [4. Component Cards](#4-component-cards)
+  - [Ingestion + Queue](#ingestion--queue)
+  - [Idempotency + Idempotency Keys](#idempotency--idempotency-keys)
+  - [Backpressure](#backpressure)
+  - [Circuit Breakers](#circuit-breakers)
+  - [Enrichment Fan-Out](#enrichment-fan-out)
+  - [Hybrid Retrieval](#hybrid-retrieval)
+  - [Prompt Construction](#prompt-construction)
+  - [Deterministic vs LLM Boundary](#deterministic-vs-llm-boundary)
+  - [Multi-Tenancy + Isolation](#multi-tenancy--isolation)
+  - [Policy Gate](#policy-gate)
+  - [Feedback Loop](#feedback-loop)
 - [5. Scenario Cards](#5-scenario-cards)
+  - [Real-Time Alert Triage](#real-time-alert-triage)
+  - [Text-to-Search for Security Logs](#text-to-search-for-security-logs)
+  - [Detection Code Generation](#detection-code-generation)
+  - [Collective Intelligence for SOC Analysts](#collective-intelligence-for-soc-analysts)
+  - [Data Pipeline Feeding AI Agents](#data-pipeline-feeding-ai-agents)
 - [6. Failure Mode Bank](#6-failure-mode-bank)
 - [7. Failure Mode Brush-Up](#7-failure-mode-brush-up)
+  - [Default Answer Shape](#default-answer-shape)
+  - [Fast Drills](#fast-drills)
+  - [One-Minute Spoken Drill](#one-minute-spoken-drill)
 - [8. Tradeoff Bank](#8-tradeoff-bank)
 - [9. Metrics to Name](#9-metrics-to-name)
 - [10. Scaling at 10x](#10-scaling-at-10x)
@@ -161,6 +180,41 @@ Spoken example:
 
 > "If Panther receives the same alert twice because a producer retries after a timeout, I would compute an idempotency key from tenant, source, and source alert ID. The triage service first reserves that key in a dedupe/idempotency store. If the key already completed, it returns the existing alert/triage result instead of creating another alert or rerunning side effects. If the same key arrives with a different request hash, that is a client or producer bug and should be rejected or sent to review."
 
+### Backpressure
+
+| Field | Quick Reference |
+|---|---|
+| Say | "Backpressure protects the system by slowing producers or shedding low-value work before queues and dependencies collapse." |
+| Trigger | Queue lag, oldest message age, worker saturation, API rate limits, DB/LLM latency, error rate. |
+| Design | Bounded queues, rate limits, per-tenant quotas, priority lanes, retry budgets, circuit breakers. |
+| Priority | High-severity alerts first; defer enrichment, summaries, analytics, and low-risk batch work. |
+| Producer signal | Return `429`/retry-after for APIs; slow consumers or pause partitions for streams. |
+| Degrade | Serve partial enrichment, use cached/stale context, route to cheaper/faster model, skip non-critical steps. |
+| Fairness | Per-tenant limits prevent one noisy tenant from starving others. |
+| Recovery | Drain by priority, autoscale workers, replay deferred work, then relax limits gradually. |
+| Watch | Do not retry without jitter; synchronized retries can make overload worse. |
+
+Spoken example:
+
+> "If triage workers fall behind during an alert storm, I would watch oldest message age and consumer lag. The system should apply per-tenant rate limits, prioritize high-severity alerts, shed optional enrichment, and return partial but clearly marked triage results. Once the queue drains, deferred enrichment and summaries can be replayed."
+
+### Circuit Breakers
+
+| Field | Quick Reference |
+|---|---|
+| Say | "A circuit breaker prevents a failing dependency from turning into a system-wide failure." |
+| Use for | Threat intel, identity provider, ticketing, vector DB, LLM API, notification service. |
+| States | Closed = normal calls; open = fail fast/use fallback; half-open = test limited recovery calls. |
+| Trip on | Timeout rate, error rate, p95 latency, rate-limit responses, saturated connection pool. |
+| Fallback | Cached/stale data, partial enrichment, skip optional source, queue retry, human review. |
+| Scope | Breakers should be per dependency and often per tenant/workflow to preserve fairness. |
+| Recovery | Exponential backoff, jitter, small half-open probes, gradual traffic ramp. |
+| Watch | Do not hide missing evidence; mark which source was skipped or stale. |
+
+Spoken example:
+
+> "If the threat intel provider starts timing out, I would open a circuit after a threshold, stop hammering it, and continue triage with cached or missing intel clearly marked. The breaker can later half-open with a few probe requests, and only return to normal once latency and errors recover."
+
 ### Enrichment Fan-Out
 
 | Field | Quick Reference |
@@ -208,6 +262,24 @@ Spoken example:
 | Audit logs | Analyst-facing narrative |
 
 > "The model reasons over data; it does not store authority or execute side effects."
+
+### Multi-Tenancy + Isolation
+
+| Field | Quick Reference |
+|---|---|
+| Say | "Tenant isolation is an invariant in auth, storage, retrieval, cache, and tools; it is not a prompt instruction." |
+| Identity | Every request, event, document, vector, tool call, and audit log carries `tenant_id`. |
+| Authz | Enforce tenant scope before query execution, retrieval, enrichment, and tool invocation. |
+| Storage | Shared tables with mandatory tenant filters early; dedicated shards/indexes for large or regulated tenants. |
+| Retrieval | Apply tenant filter before rerank/summarize; never rely on the LLM to ignore cross-tenant context. |
+| Cache | Include `tenant_id`, policy version, and permission scope in cache keys. |
+| Learning | Aggregate only anonymized/approved signals; keep customer evidence out of cross-tenant prompts. |
+| Testing | Isolation tests, synthetic tenant canaries, query linting, access-log audits. |
+| Incident | Cross-tenant evidence is severity one: block result, audit filters, invalidate affected cache/index, notify per policy. |
+
+Spoken example:
+
+> "For a multi-tenant SOC product, I would make tenant ID part of the data model and execution context everywhere. Retrieval should filter by tenant before ranking or summarization, caches should be tenant-scoped, and tools should enforce tenant authz outside the model. If cross-tenant evidence appears, I would treat it as a security incident, block the response, and audit the retrieval and cache layers."
 
 ### Policy Gate
 

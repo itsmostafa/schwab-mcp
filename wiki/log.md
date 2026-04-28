@@ -40,6 +40,24 @@ Ingested `raw/round-4-interview-questions.md` into the maintained wiki question 
 
 ---
 
+## [2026-04-28] update | Circuit breaker section added
+
+Updated `wiki/rounds/round-4-cheat-sheet.md` with a Circuit Breakers component card covering dependency protection, breaker states, trip signals, fallbacks, recovery, and a spoken threat-intel timeout example. Updated `wiki/index.md`.
+
+---
+
+## [2026-04-28] update | Round 4 cheat sheet TOC expanded
+
+Updated `wiki/rounds/round-4-cheat-sheet.md` table of contents to include missing component, scenario, and failure drill subsections, including Backpressure and Multi-Tenancy + Isolation.
+
+---
+
+## [2026-04-28] update | Backpressure and multi-tenancy sections added
+
+Updated `wiki/rounds/round-4-cheat-sheet.md` with component cards for handling backpressure and multi-tenancy/isolation, including triggers, mitigations, tenant-scoped retrieval/cache guidance, and spoken interview examples. Updated `wiki/index.md`.
+
+---
+
 ## [2026-04-28] update | Idempotency key section added to Round 4 cheat sheet
 
 Updated `wiki/rounds/round-4-cheat-sheet.md` with an Idempotency + Idempotency Keys component card covering key shape, storage, write flow, side effects, TTL, failure modes, and a spoken Panther alert duplicate example. Updated `wiki/index.md`.
