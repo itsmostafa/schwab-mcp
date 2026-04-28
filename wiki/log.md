@@ -4,6 +4,24 @@ Append-only. Format: `## [YYYY-MM-DD] type | description`
 
 ---
 
+## [2026-04-28] update | Round 4 cheat sheet table of contents added
+
+Added a clickable table of contents near the top of `wiki/rounds/round-4-cheat-sheet.md` so the main Systems Design cheat-sheet sections are easier to jump to.
+
+---
+
+## [2026-04-28] update | Failure-mode brush-up added
+
+Added a drill-oriented failure-mode brush-up section to `wiki/rounds/round-4-cheat-sheet.md`, including the answer shape, fast scenario prompts, a one-minute spoken drill, and a memory hook. Updated the index hook for the cheat sheet.
+
+---
+
+## [2026-04-28] update | Round 4 cheat sheet made glanceable
+
+Reworked `wiki/rounds/round-4-cheat-sheet.md` into a faster quick-reference format that leans on `raw/round-4-cheat-sheet.md`: 5-second map, compact component cards, scenario cards, failure counters, tradeoffs, metrics, scaling, safe autonomy, and interview-ready one-liners.
+
+---
+
 ## [2026-04-28] cleanup | Completed-round wiki material removed
 
 Removed completed technical-design-round prep material from the maintained wiki. Deleted the dedicated completed-round guide, question bank, cheat sheet, and obsolete prep-method audit. Reworked the active prep plan and guided study prompt around Systems Design. Updated the index, overview, cross-links, project story metadata, and concept pages so the wiki points to the next active round.
@@ -49,8 +67,6 @@ Created `wiki/rounds/round-4-cheat-sheet.md` as a final-scan guide for the Syste
 ## [2026-04-27] update | CSET chatbot interview version converted to quick-reference outline
 
 Reworked `wiki/projects/cset-ai-chatbot-story.md` so the Interview Version is no longer a long spoken script. It now highlights the opening hook, architecture, ingestion/query paths, design principle, tradeoffs, production-minded pieces, next improvements, and the strongest closing line for quick interview recall.
-
----
 
 ## [2026-04-26] audit | System design concepts externally validated
 

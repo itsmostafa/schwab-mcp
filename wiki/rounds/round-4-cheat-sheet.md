@@ -1,406 +1,461 @@
 ---
 type: cheat-sheet
-last-updated: 2026-04-27
+last-updated: 2026-04-28
 tags: [systems-design, round-4, interview-prep, panther]
 ---
 
 # Round 4 Cheat Sheet - Systems Design
 
-Round 4 is the **Systems Design** interview: 60 minutes, no coding, open-ended. Darwayne called this the **most revealing** round. The goal is not to guess the perfect architecture; the goal is to show senior judgment under ambiguity.
+**Goal:** be clear under ambiguity. Round 4 is 60 minutes, no coding, open-ended. Darwayne called it the **most revealing** round.
 
-Use this page as the final pre-interview scan.
+**Default posture:** SOC trust first, then latency/cost/autonomy.
+
+**One-line anchor:** "Event-driven, decoupled, observable; the LLM recommends, the platform enforces."
 
 ---
 
-## What They Are Scoring
+## Table of Contents
 
-| Signal | Show It By Saying / Doing |
+- [0. 5-Second Map](#0-5-second-map)
+- [1. Universal Opener](#1-universal-opener)
+- [2. Interview Flow](#2-interview-flow)
+- [3. Anchor Architecture: AI Alert Triage](#3-anchor-architecture-ai-alert-triage)
+- [4. Component Cards](#4-component-cards)
+- [5. Scenario Cards](#5-scenario-cards)
+- [6. Failure Mode Bank](#6-failure-mode-bank)
+- [7. Failure Mode Brush-Up](#7-failure-mode-brush-up)
+- [8. Tradeoff Bank](#8-tradeoff-bank)
+- [9. Metrics to Name](#9-metrics-to-name)
+- [10. Scaling at 10x](#10-scaling-at-10x)
+- [11. Safe Autonomy](#11-safe-autonomy)
+- [12. Things to Say](#12-things-to-say)
+- [13. Red Flags to Avoid](#13-red-flags-to-avoid)
+- [14. Strong Close](#14-strong-close)
+- [See Also](#see-also)
+
+---
+
+## 0. 5-Second Map
+
+| Topic | Say | Remember |
+|---|---|---|
+| Start | "Let me clarify assumptions before designing." | Frame ambiguity before boxes |
+| Architecture | "I would structure this as an event-driven pipeline." | Queue decouples bursty work |
+| Enrichment | "Better partial answers than blocked systems." | Timeouts, retries, circuit breakers |
+| Retrieval | "BM25 for exact, vector for similar." | Precision + recall = signal |
+| Prompting | "Optimize for signal per token." | Evidence IDs + strict schema |
+| LLM boundary | "LLM recommends; system enforces." | Auth/policy/actions outside model |
+| Failure | "Observable, bounded, safe." | Detect + degrade + recover |
+| Feedback | "Feedback improves retrieval, evals, and decisions." | Do not blindly train on noisy labels |
+| Autonomy | "Controlled autonomy, not blind automation." | Low risk auto; high risk HITL |
+| Scaling | "Design for graceful degradation." | Backpressure, cache, shard, route models |
+
+---
+
+## 1. Universal Opener
+
+Use this verbatim:
+
+> "Before I draw the system, I want to clarify scale, latency, success metrics, and what the system must not get wrong. Then I will propose the high-level architecture, deep dive on the riskiest components, and close with tradeoffs and failure modes."
+
+Ask 3-5:
+
+| Clarify | Why |
 |---|---|
-| Ambiguity handling | Clarify scale, SLA, product constraints, and success metric before drawing |
-| Systems thinking | Draw data flow, components, storage, APIs, and operational boundaries |
-| Tradeoff reasoning | For every major choice, state the alternative and why you chose this path |
-| Failure awareness | Name what breaks, how you detect it, and how the system degrades |
-| Production maturity | Cover monitoring, replay, audit logs, rollbacks, evals, and customer trust |
-| Panther fit | Tie architecture back to SOC outcomes: faster triage, less analyst toil, safer automation |
+| Alerts/day, events/day, tenants, analysts? | Scale + partitioning |
+| Real-time, minutes, or batch? | Latency + architecture |
+| Optimize for accuracy, cost, latency, or trust? | Tradeoff order |
+| What can AI do autonomously? | Policy gate + HITL |
+| Existing Panther infra or greenfield? | Integration constraints |
+| Multi-tenant isolation from day one? | Auth/retrieval/storage design |
+| Dependencies: SIEM, logs, threat intel, identity? | Enrichment + failure modes |
+
+Restate:
+
+> "So I am designing X at Y scale with Z latency, prioritizing analyst trust over full autonomy."
 
 ---
 
-## Universal Opener
+## 2. Interview Flow
 
-Use this for any prompt:
-
-> "Before I dive in, I want to make sure I'm solving the right problem. Can I clarify scale, latency, and what we absolutely cannot get wrong? Then I'll walk through the high-level architecture, pick one or two components to deep dive, and close with tradeoffs and failure modes."
-
-Then ask 3-5 of these:
-
-- "How many customers, alerts/day, and events/day should I assume?"
-- "Is the output user-facing in seconds, minutes, or batch?"
-- "Is this greenfield or does it need to integrate with existing Panther ingestion/query infrastructure?"
-- "Are we optimizing first for accuracy, latency, cost, or analyst trust?"
-- "What actions can the system take autonomously versus requiring human review?"
-- "Do we need multi-tenant isolation and per-tenant policy from day one?"
-
-Restate after answers:
-
-> "So I am designing X for Y scale, with Z latency, prioritizing trust and analyst workflow over full autonomy."
-
----
-
-## The 6-Step Flow
-
-Memorize this:
-
-```
-Clarify -> Restate -> High-level design -> Deep dive -> Tradeoffs -> Operations
+```text
+Clarify -> Restate -> Architecture -> Deep dive -> Tradeoffs -> Operations
 ```
 
-Suggested timing:
-
-| Phase | Time | What To Do |
+| Phase | Time | Output |
 |---|---:|---|
-| Clarify | 3 min | Scale, SLA, scope, autonomy boundary |
-| Restate | 1 min | Repeat the problem and assumptions |
-| High-level | 8-10 min | Boxes, arrows, storage, APIs |
-| Deep dive | 15-20 min | One or two critical components |
-| Tradeoffs | Throughout | Name options and decision criteria |
-| Operations | Final 8-10 min | Failure modes, monitoring, replay, rollout |
+| Clarify | 3 min | Scale, SLA, scope, autonomy |
+| Restate | 1 min | Assumptions + success metric |
+| Architecture | 8-10 min | Boxes, arrows, stores, APIs |
+| Deep dive | 15-20 min | 1-2 risky components |
+| Tradeoffs | Throughout | A vs B + decision rule |
+| Operations | 8-10 min | Failures, metrics, rollout |
 
-If stuck, return to the flow out loud: "Let me step back and make the data flow explicit."
+If stuck:
+
+> "Let me step back and make the data flow explicit."
 
 ---
 
-## Anchor Design: Real-Time Alert Triage
+## 3. Anchor Architecture: AI Alert Triage
 
-This design covers most Panther-flavored prompts.
+```text
+Alerts/events
+-> validation + normalization + tenant routing
+-> durable queue
+-> enrichment fan-out
+-> hybrid retrieval
+-> rerank + summarize
+-> LLM / agent reasoning
+-> policy gate
+-> analyst action / limited auto action
+-> audit log + feedback loop
+```
 
-```
-Security events / alerts
-  -> ingestion + tenant routing
-  -> normalization + schema validation
-  -> durable queue / stream
-  -> enrichment fan-out
-       - user history
-       - asset context
-       - threat intel
-       - related alerts/logs
-  -> retrieval
-       - structured query / BM25 for exact IOCs, users, detection IDs
-       - vector search for similar alerts and prior analyst decisions
-  -> rerank + summarize + token budget
-  -> agent orchestrator
-       - prompt assembly
-       - tool calls
-       - structured JSON output
-  -> policy gate outside the LLM
-  -> analyst queue / escalation / limited auto-close
-  -> feedback capture + audit log
-  -> eval dataset / index updates / rollout loop
-```
+| Stage | Job | Watch For |
+|---|---|---|
+| Ingestion | Accept events, validate schema, route tenant | duplicates, parser drift |
+| Queue | Decouple spikes from workers | lag, backpressure |
+| Enrichment | Add user/asset/log/threat intel/history | slow dependencies |
+| Retrieval | Find exact IOCs + similar incidents | tenant filters, bad context |
+| Rerank/summarize | Fit best evidence into prompt | token waste, lost provenance |
+| LLM/agent | Classify, summarize, recommend | hallucination, invalid output |
+| Policy gate | Enforce rules outside model | unsafe action, RBAC |
+| Analyst workflow | Human review, escalation, closure | trust, override rate |
+| Feedback | Capture decisions for eval/retrieval/prompting | noisy labels, drift |
 
 Key sentence:
 
-> "The LLM synthesizes ambiguous evidence, but deterministic services own validation, authorization, policy enforcement, side effects, and auditability."
+> "The LLM synthesizes ambiguous evidence, but deterministic services own auth, validation, policy enforcement, side effects, and auditability."
 
 ---
 
-## Component Deep Dives
+## 4. Component Cards
 
 ### Ingestion + Queue
 
-Design choice:
-- Use a durable stream/queue between ingestion and triage workers.
-- Partition by `tenant_id` and possibly `alert_id` or `entity_id`.
-- Make processing idempotent with event IDs and dedupe tables.
-
-Tradeoff:
-- Streaming adds operational complexity, but protects the system from bursty alert volume and lets workers scale independently.
-
-Failure mode:
-- Consumer lag grows during alert spikes.
-- Detect with queue depth, age of oldest message, processing latency, and per-tenant lag.
+| Field | Quick Reference |
+|---|---|
+| Say | "Use a durable stream partitioned by tenant, with idempotent processing." |
+| Why | Decouples alert spikes from triage workers. |
+| Design | `tenant_id` partitioning, event IDs, dedupe table, DLQ. |
+| Failure | Queue lag, duplicate processing, poison messages. |
+| Detect | Oldest message age, consumer lag, retry/DLQ rate. |
+| Mitigate | Autoscale workers, backpressure, severity priority, idempotency keys. |
 
 ### Enrichment Fan-Out
 
-Design choice:
-- Run independent enrichments in parallel: asset inventory, user history, threat intel, previous similar alerts.
-- Put timeouts and circuit breakers around slow external dependencies.
+| Field | Quick Reference |
+|---|---|
+| Say | "Better partial answers than blocked systems." |
+| Adds | User, asset, identity, threat intel, prior alerts, related logs. |
+| Design | Parallel async calls with timeouts, retries, circuit breakers, cache. |
+| Tradeoff | Wait for all evidence = better quality; partial evidence = lower latency. |
+| Failure | Threat intel or identity provider times out. |
+| Mitigate | Return partial results with missing evidence clearly marked. |
 
-Tradeoff:
-- Waiting for all enrichment improves evidence quality but hurts latency. Prefer partial results with provenance when SLA matters.
+### Hybrid Retrieval
 
-Failure mode:
-- Threat intel provider times out.
-- Degrade gracefully: continue with missing evidence clearly marked.
+| Field | Quick Reference |
+|---|---|
+| Say | "BM25 gives precision; vectors give recall." |
+| BM25 | Exact IPs, hashes, usernames, detection IDs, raw log terms. |
+| Vector | Similar cases, analyst decisions, semantic patterns. |
+| Design | Run both -> tenant filter -> merge -> rerank -> dedupe -> cite evidence IDs. |
+| Failure | Irrelevant examples poison prompt. |
+| Mitigate | Source scoring, reranking, retrieval evals, analyst override tracking. |
 
-### Retrieval Layer
+### Prompt Construction
 
-Design choice:
-- Use hybrid retrieval: structured filters / BM25 for exact matches, vector search for semantic similarity.
-- Always filter by tenant and access policy before retrieval.
+| Field | Quick Reference |
+|---|---|
+| Say | "Optimize for signal per token." |
+| Inputs | Tenant policy, task, evidence, output schema, allowed tools. |
+| Prep | Filter, dedupe, cluster, rerank, summarize. |
+| Require | Classification, confidence, evidence IDs, rationale, next action. |
+| Failure | Hallucinated fields, missing evidence, invalid JSON. |
+| Mitigate | Strict schema, validation, one repair retry, human fallback. |
 
-Tradeoff:
-- Vector search improves recall for similar incidents; exact search is safer for IOCs and IDs.
+### Deterministic vs LLM Boundary
 
-Failure mode:
-- Retrieval returns irrelevant examples and poisons the prompt.
-- Detect with retrieval hit-rate, analyst override rate by retrieved-source cohort, and eval-set regression.
+| Deterministic | LLM |
+|---|---|
+| Auth/RBAC | Summarization |
+| Tenant isolation | Classification |
+| Validation | Reasoning over evidence |
+| Routing | Recommendation |
+| Tool execution | Explanation |
+| Retries/timeouts | Draft query/action |
+| Policy gates | Confidence estimate |
+| Audit logs | Analyst-facing narrative |
 
-### Agent Orchestrator
-
-Design choice:
-- Assemble prompts from modules: base instructions, task, tenant policy, evidence, output schema.
-- Require structured output with classification, confidence, evidence IDs, and next action.
-
-Tradeoff:
-- Modular prompts require more engineering discipline, but prevent drift across agents and make testing easier.
-
-Failure mode:
-- Model produces invalid JSON or unsupported action.
-- Validate schema, retry once with repair, then route to human queue.
+> "The model reasons over data; it does not store authority or execute side effects."
 
 ### Policy Gate
 
-Design choice:
-- Policy gate lives outside the LLM.
-- It checks tenant policy, confidence, severity, action type, and required human approval.
-
-Tradeoff:
-- Reduces autonomy, but preserves customer trust and security boundaries.
-
-Failure mode:
-- Model recommends an action that policy disallows.
-- Block it, log it, and expose the recommendation as analyst context only.
+| Field | Quick Reference |
+|---|---|
+| Say | "Policy gate lives outside the LLM." |
+| Checks | Tenant rules, severity, confidence, action type, RBAC, approval requirement. |
+| Risk model | Low risk -> auto; high risk -> human in the loop. |
+| Failure | Model recommends an unsupported or unsafe action. |
+| Mitigate | Block action, log it, show recommendation as analyst context only. |
 
 ### Feedback Loop
 
-Design choice:
-- Capture analyst accept/reject/modify decisions as structured events.
-- Use them for eval datasets, retrieval examples, prompt examples, and possible fine-tuning candidates.
-
-Tradeoff:
-- Fast learning from feedback is valuable, but blindly training on noisy labels can amplify mistakes.
-
-Failure mode:
-- New agent version regresses on one tenant or severity class.
-- Use offline eval, shadow mode, canary rollout, A/B comparison, and rollback.
+| Field | Quick Reference |
+|---|---|
+| Say | "Feedback improves the system, not just prompts." |
+| Log | Alert ID, evidence IDs, prompt/model version, tool calls, confidence, analyst action. |
+| Use | Eval datasets, retrieval examples, thresholds, prompts, fine-tuning candidates. |
+| Warning | Noisy labels can reinforce bad decisions. |
+| Rollout | Offline eval -> shadow mode -> canary -> A/B -> rollback. |
 
 ---
 
-## Scenario Cards
+## 5. Scenario Cards
 
-### 1. Design A Real-Time Alert Triage System
+### Real-Time Alert Triage
 
-Lead with:
-- "I will optimize for analyst trust first, then latency/cost."
+| Field | Quick Reference |
+|---|---|
+| Lead | "I will optimize for analyst trust first, then latency and cost." |
+| Flow | Ingest -> queue -> enrich -> hybrid retrieval -> agent -> policy -> analyst -> feedback. |
+| Deep dive | Retrieval + policy gate. |
+| Metrics | Time-to-triage, override rate, auto-close reversal, queue lag, precision/recall by severity. |
+| Risks | Bad evidence, tenant leaks, unsafe action, model drift. |
 
-Architecture:
-- Ingestion -> queue -> enrichment -> hybrid retrieval -> agent -> policy gate -> analyst workflow -> feedback.
+### Text-to-Search for Security Logs
 
-Deep dive:
-- Retrieval and policy gate.
+| Field | Quick Reference |
+|---|---|
+| Lead | "This should produce inspectable queries, not opaque answers." |
+| Flow | Question -> intent -> schema/entity resolver -> query generator -> validator -> execute -> cite raw events. |
+| Deep dive | Query validation + schema grounding. |
+| Tradeoff | Flexible LLM query vs safer constrained templates. |
+| Risks | Full scan, hallucinated field, invalid query, unauthorized tenant access. |
 
-Metrics:
-- Time-to-triage, analyst override rate, auto-close reversal rate, precision/recall by severity, queue lag.
+### Detection Code Generation
 
-### 2. Design Text-To-Search For Security Logs
+| Field | Quick Reference |
+|---|---|
+| Lead | "Generated detections need tests and review before production alerting." |
+| Flow | Spec -> RAG examples/docs -> code -> static checks -> unit tests -> sandbox -> human review -> deploy. |
+| Deep dive | Test harness + review workflow. |
+| Tradeoff | Fast draft generation vs false-positive/false-negative risk. |
+| Risks | Overbroad rule floods analysts; underbroad rule misses attacks; unsupported APIs. |
 
-Lead with:
-- "This should produce inspectable queries, not just natural-language answers."
+### Collective Intelligence for SOC Analysts
 
-Architecture:
-- User question -> intent parser -> schema/entity resolver -> query generator -> query validator -> execute against log store -> rank/summarize results -> cite raw events.
+| Field | Quick Reference |
+|---|---|
+| Lead | "The hard part is learning across decisions without leaking tenant data." |
+| Flow | Analyst actions -> normalize labels -> quality filters -> privacy boundary -> aggregate patterns -> eval/retrieval/prompt updates. |
+| Deep dive | Signal quality + tenant isolation. |
+| Tradeoff | Cross-customer learning improves coverage; privacy boundaries preserve trust. |
+| Risks | Noisy labels, feedback loops, tenant data leakage. |
 
-Deep dive:
-- Query validation and schema grounding.
+### Data Pipeline Feeding AI Agents
 
-Tradeoff:
-- LLM-generated query gives flexibility; constrained query templates reduce dangerous or expensive queries.
-
-Failure modes:
-- Invalid query, expensive full scan, hallucinated field, unauthorized tenant access.
-
-### 3. Design Detection Code Generation
-
-Lead with:
-- "Generated detections need tests and review before they affect production alerting."
-
-Architecture:
-- Natural-language spec -> RAG over detection examples/docs -> code generation -> static checks -> unit tests against sample logs -> sandbox run -> human review -> versioned deployment.
-
-Deep dive:
-- Test harness and human review workflow.
-
-Tradeoff:
-- Fast draft generation versus safety of deploying detection logic that can create false positives or miss real threats.
-
-Failure modes:
-- Overbroad rule floods analysts; underbroad rule misses attacks; generated code uses unsupported APIs.
-
-### 4. Design Collective Intelligence For SOC Analysts
-
-Lead with:
-- "The core problem is turning analyst decisions into reliable product improvement without leaking tenant data."
-
-Architecture:
-- Analyst action stream -> normalize labels -> quality filters -> tenant/privacy boundary -> aggregate patterns -> update retrieval/evals/prompts -> canary rollout.
-
-Deep dive:
-- Signal quality and tenant isolation.
-
-Tradeoff:
-- Cross-customer learning improves coverage, but privacy and tenant boundaries must be explicit.
-
-Failure modes:
-- Noisy labels, feedback loops that reinforce bad decisions, tenant data leakage.
-
-### 5. Design The Data Pipeline Feeding AI Agents
-
-Lead with:
-- "The AI system is only as good as the normalized, searchable, permissioned data layer beneath it."
-
-Architecture:
-- Log ingestion -> parsing/normalization -> schema evolution -> storage -> structured index + vector index -> retrieval APIs -> retention/deletion.
-
-Deep dive:
-- Schema evolution and dual indexing.
-
-Tradeoff:
-- Schema-on-write improves query quality; schema-on-read preserves flexibility for varied security logs.
-
-Failure modes:
-- Parser drift, index lag, duplicate events, retention mismatch, tenant isolation bug.
+| Field | Quick Reference |
+|---|---|
+| Lead | "AI is only as good as the normalized, searchable, permissioned data beneath it." |
+| Flow | Logs -> parse/normalize -> schema evolution -> storage -> structured index + vector index -> retrieval APIs -> retention/deletion. |
+| Deep dive | Schema evolution + dual indexing. |
+| Tradeoff | Schema-on-write improves query quality; schema-on-read preserves flexibility. |
+| Risks | Parser drift, index lag, duplicate events, retention mismatch, tenant bug. |
 
 ---
 
-## Tradeoff Bank
+## 6. Failure Mode Bank
 
-| Decision | Default Answer | Alternative | Why |
-|---|---|---|---|
-| Streaming vs batch | Streaming for triage | Batch for reports/training | Triage needs continuous updates and bounded lag |
-| RAG vs fine-tuning | RAG first | Fine-tune later | Security knowledge changes; evidence must be inspectable |
-| Hybrid retrieval vs vector only | Hybrid | Vector only | IOCs and detection IDs need exact matching |
-| Dedicated vector DB vs pgvector | Depends on scale | Either | pgvector for simplicity; dedicated service for independent scaling/filter latency |
-| Smaller vs larger model | Tier by risk | Single big model | Fast model for first pass; stronger model/verifier for high-risk cases |
-| Human review vs autonomy | Human gate for high-stakes actions | Full autonomy | Blocking, escalation, or closure affects trust and safety |
-| Store summaries vs raw events | Store both | One only | Summaries help speed; raw events are needed for audit and reprocessing |
-| Multi-tenant shared infra vs per-tenant isolation | Shared compute with hard isolation | Dedicated tenant stacks | Shared is cost-efficient; isolation must be enforced in auth, retrieval, and audit |
+| Layer | Failure | Counter |
+|---|---|---|
+| Ingestion | duplicates, poison messages | idempotency keys, dedupe table, DLQ |
+| Queue | backlog, old messages | autoscale, backpressure, severity priority |
+| Enrichment | slow/down dependencies | timeout, retry, circuit breaker, cache, partial result |
+| Retrieval | bad evidence | tenant filters, rerank, retrieval evals |
+| Prompt | token bloat, lost evidence | cluster, summarize, evidence IDs |
+| LLM | hallucination, invalid JSON | strict schema, validator, repair retry |
+| Tools | unsafe call | allowlist, RBAC, policy gate |
+| Actions | bad auto-close/block | confidence + severity thresholds, human approval |
+| Model | drift/regression | offline evals, shadow mode, canary, rollback |
+| Tenant | data leak | authz in retrieval/tool layer, isolation tests |
+| Cost | token/API spike | caching, summarization, model routing, rate limits |
+
+Interview line:
+
+> "Failures must be observable, bounded, and safe."
+
+---
+
+## 7. Failure Mode Brush-Up
+
+Use this when you have 5-10 minutes and want the failure-mode muscle memory.
+
+### Default Answer Shape
+
+```text
+Failure -> Detection -> Containment -> Recovery -> Prevention
+```
+
+| Step | Say |
+|---|---|
+| Failure | "The likely failure is X at layer Y." |
+| Detection | "I would detect it with metric/log/trace Z." |
+| Containment | "The system should degrade safely by doing A." |
+| Recovery | "Then retry/replay/rebuild through B." |
+| Prevention | "Longer term, add test/eval/guardrail C." |
+
+### Fast Drills
+
+| Prompt | Strong Answer |
+|---|---|
+| Threat intel is down | Timeout, circuit breaker, cached/stale intel, partial triage, mark missing source. |
+| Vector retrieval returns bad context | Tenant filter, source scores, rerank, cap low-quality examples, track analyst rejects. |
+| Model emits invalid JSON | Schema validation, one repair retry, deterministic fallback, human review if still invalid. |
+| Agent recommends unsafe action | Policy gate blocks, log recommendation, show as context only, require analyst approval. |
+| Queue is falling behind | Consumer lag alert, autoscale, severity priority, backpressure, shed non-critical enrichment. |
+| Duplicate alerts flood triage | Idempotency keys, dedupe table, grouping by detection/entity/window, analyst-visible cluster. |
+| Parser/schema changes break normalization | Schema versioning, parser tests, DLQ, replay after fix, compatibility checks. |
+| Cross-tenant evidence appears | Treat as severity-one incident: block result, audit retrieval filters, isolation tests, rotate affected cache/index if needed. |
+| Cost spikes | Token budgets, summarization, cache, smaller-model routing, rate limits per tenant/workflow. |
+| Model quality regresses | Offline eval catches it, shadow/canary rollout, rollback, compare by severity and tenant segment. |
+
+### One-Minute Spoken Drill
+
+> "For each component I would ask: how does it fail, how do we know, what is the safe degraded behavior, and how do we recover? For example, if enrichment is slow, I do not block triage indefinitely. I use timeouts, retries, circuit breakers, and cached data, then return a partial result with missing evidence explicitly marked. The same pattern applies across the system: queues degrade with backpressure and priority, retrieval degrades with stricter filters and reranking, LLM output degrades through schema validation and human fallback, and actions are always bounded by deterministic policy gates."
+
+Memory hook:
+
+> "Detect fast, degrade safely, recover by replay, prevent with evals and tests."
+
+---
+
+## 8. Tradeoff Bank
+
+| Decision | Default | Switch If |
+|---|---|---|
+| Streaming vs batch | Streaming for triage | Reports/training can be batch |
+| RAG vs fine-tuning | RAG first | Stable task + enough high-quality labels |
+| Hybrid vs vector only | Hybrid | Vector-only is acceptable only for non-exact semantic search |
+| pgvector vs dedicated vector DB | pgvector early | Dedicated service when scale/filter latency demands it |
+| Big vs small model | Route by risk | Single model if simplicity matters more |
+| Human review vs autonomy | HITL for high stakes | Low-risk, high-confidence, reversible action |
+| Store summaries vs raw | Store both | Retention/cost forces tiering |
+| Shared vs per-tenant infra | Shared with hard isolation | Regulated/large tenant needs dedicated stack |
+| Schema-on-write vs schema-on-read | Schema-on-write for quality | Unknown log shapes need flexibility |
 
 Pattern:
 
-> "I would choose A under these assumptions, because B costs us X. If the interviewer changes the constraint to Y, I would switch."
+> "I would choose A under these assumptions because B costs us X. If the constraint changes to Y, I would switch."
 
 ---
 
-## Failure Mode Bank
+## 9. Metrics to Name
 
-Use this whenever they ask "what could go wrong?"
-
-| Failure | Detection | Mitigation |
-|---|---|---|
-| Queue backlog | Consumer lag, old message age | Autoscale workers, shed non-critical enrichment, prioritize severity |
-| Duplicate processing | Duplicate event IDs/actions | Idempotency keys, dedupe table, exactly-once side-effect boundary |
-| Enrichment dependency down | Timeout/error rate | Circuit breaker, cached/stale data, partial result |
-| Retrieval pollution | Bad evidence in eval traces, overrides | Tenant filters, source scoring, reranking, retrieval evals |
-| Prompt injection in logs | Suspicious instruction patterns, tool attempts | Treat logs as untrusted data, tool allowlists, policy gate |
-| Invalid model output | Schema validation failures | JSON schema validation, retry/repair, human fallback |
-| Bad autonomous action | Reversal rate, audit review | Limit autonomy, confidence/severity thresholds, approval workflow |
-| Model drift | Distribution shift, precision drop | Eval suites, shadow mode, canary, rollback |
-| Tenant data leak | Access audit anomalies | Authz at retrieval/tool layer, per-tenant filters, tests |
-| Cost spike | Token spend, calls/alert | Caching, summarization, model routing, rate limits |
-
----
-
-## Metrics To Name
-
-### System Metrics
-
-- Ingestion rate, queue lag, processing latency p50/p95/p99
-- Enrichment timeout/error rate
-- Retrieval latency and hit rate
-- Model latency, token cost, schema-valid output rate
-- Audit-log write success rate
-
-### SOC Outcome Metrics
-
-- Time-to-triage
-- Analyst override rate
-- Auto-close reversal rate
-- False negative rate by severity
-- Alerts handled per analyst
-- Mean time to respond
-
-### Safety Metrics
-
-- Unauthorized tool attempt rate
-- Policy-gate block rate
-- Prompt-injection detection rate
-- Human escalation rate for low-confidence cases
-
-### Learning Metrics
-
-- Eval-set precision/recall by tenant/severity
-- Drift in classification distribution
-- Retrieval quality by source type
-- Canary version win/loss against baseline
-
----
-
-## Numbers To Keep Handy
-
-Use only after stating assumptions.
-
-| Number | Use |
+| Category | Metrics |
 |---|---|
-| 1M events/day ~= 11.5 events/sec | Quick event-volume conversion |
-| 1B events/day ~= 11,500 events/sec | Panther-scale pipeline discussion |
-| Same-DC network RTT ~= 0.5 ms | Service-call intuition |
-| Cross-region RTT ~= 30-100 ms | Avoid cross-region synchronous calls |
-| SSD read ~= 100 us | Storage intuition |
-| Seconds | Reasonable first-pass enrichment target |
-| Minutes | Reasonable analyst-ready triage target if evidence quality matters |
+| System | ingestion rate, queue lag, p95/p99 latency, enrichment timeout rate |
+| Retrieval | hit rate, rerank quality, evidence usefulness, source quality |
+| Model | latency, token cost, schema-valid rate, repair rate |
+| SOC outcome | time-to-triage, analyst override rate, auto-close reversal, MTTR |
+| Safety | policy blocks, unauthorized tool attempts, prompt-injection detections |
+| Learning | eval precision/recall by severity/tenant, drift, canary win/loss |
+| Trust | audit completeness, evidence click-through, analyst accept/edit/reject |
 
 ---
 
-## Things To Say Explicitly
+## 10. Scaling at 10x
 
-- "I would keep deterministic policy enforcement outside the model."
-- "Every model decision should include evidence IDs so the analyst can inspect raw events."
-- "I would design for graceful degradation: partial enrichment is better than blocking triage."
-- "I would launch in shadow mode before allowing autonomous actions."
-- "I would make tenant isolation a retrieval-layer and authorization-layer invariant, not a prompt instruction."
-- "I would use analyst feedback, but I would not blindly train on it without quality filters."
+| Bottleneck | Move |
+|---|---|
+| Ingestion throughput | partitioning, autoscaling, backpressure |
+| Queue depth | more consumers, severity priority, shed non-critical work |
+| Enrichment APIs | cache, batch, timeout, stale reads |
+| Retrieval latency | shard indexes, precompute features, source filters |
+| LLM cost/rate limit | summarize, cache, route smaller models, batch where possible |
+| Storage volume | hot/cold tiering, retention policy, compression |
+| Tenant isolation | authz tests, per-tenant filters, audit trails |
+
+Scale numbers:
+
+| Number | Recall |
+|---|---|
+| 1M events/day | about 11.5 events/sec |
+| 1B events/day | about 11,500 events/sec |
+| Same-DC RTT | about 0.5 ms |
+| Cross-region RTT | about 30-100 ms |
+| SSD read | about 100 us |
+| Seconds | first-pass enrichment target |
+| Minutes | analyst-ready triage target when evidence quality matters |
 
 ---
 
-## Red Flags To Avoid
+## 11. Safe Autonomy
 
-- Jumping into boxes before clarifying requirements.
-- Saying "just use an LLM" without data flow, tools, policy, and monitoring.
-- Letting the LLM enforce permissions or decide side effects directly.
-- Ignoring multi-tenancy and tenant data leakage.
-- Discussing only AI metrics and not SOC/customer metrics.
-- Claiming full autonomy for high-stakes security actions too early.
-- Saying "it depends" without naming the dependency and decision rule.
+| Risk | Action |
+|---|---|
+| Low risk + high confidence + reversible | Auto-tag, auto-summarize, maybe auto-close low-severity duplicate |
+| Medium risk | Recommend + require analyst approval |
+| High severity or irreversible | Human review always |
+| Policy conflict | Block and log |
+| Unknown confidence | Escalate |
+
+Hard rule:
+
+> "The LLM never directly executes side effects; tools and policy enforce action boundaries."
 
 ---
 
-## Strong Close
+## 12. Things to Say
 
-End with a concise summary:
+- "Let me clarify assumptions before designing."
+- "I would structure this as an event-driven pipeline."
+- "The LLM recommends; the platform enforces."
+- "I optimize for signal per token."
+- "Every decision should cite evidence IDs."
+- "Tenant isolation is an auth/retrieval invariant, not a prompt instruction."
+- "Partial enrichment is better than blocking triage."
+- "I would launch in shadow mode before autonomous actions."
+- "Feedback improves retrieval, evals, thresholds, and prompts."
+- "We design for graceful degradation at scale."
 
-> "The design is a streaming, multi-tenant triage pipeline with enrichment and hybrid retrieval feeding an agent, but the policy gate and side effects stay deterministic. The biggest risks are bad evidence, model drift, tenant isolation, and unsafe automation, so I would launch with shadow mode, strong audit trails, evals, canaries, and human review for high-stakes actions."
+---
 
-Then ask:
+## 13. Red Flags to Avoid
 
-- "At Panther, where is the hardest bottleneck today: ingestion scale, retrieval quality, evals, or analyst workflow integration?"
-- "How much autonomy do customers currently want from SOC agents versus analyst-assist workflows?"
-- "How do you think about cross-customer learning while preserving customer trust and data boundaries?"
+| Avoid | Replace With |
+|---|---|
+| Drawing before clarifying | Ask scale, latency, trust, autonomy |
+| "Just use an LLM" | Show data flow, tools, policy, monitoring |
+| LLM enforces permissions | Authz outside model |
+| Vector-only retrieval | Hybrid retrieval for exact + semantic |
+| Full autonomy too early | Risk-based autonomy + HITL |
+| Only AI metrics | SOC/customer metrics too |
+| "It depends" | Name the dependency and decision rule |
+| Ignoring multi-tenancy | Tenant filters, authz, audit, tests |
+
+---
+
+## 14. Strong Close
+
+Use this:
+
+> "The design is a streaming, multi-tenant triage pipeline with enrichment and hybrid retrieval feeding an agent, but policy and side effects stay deterministic. The biggest risks are bad evidence, model drift, tenant isolation, and unsafe automation, so I would launch with shadow mode, audit trails, evals, canaries, and human review for high-stakes actions."
+
+Then ask one:
+
+- "At Panther, is the hardest bottleneck ingestion scale, retrieval quality, evals, or analyst workflow integration?"
+- "How much autonomy do customers want today versus analyst-assist workflows?"
+- "How do you approach cross-customer learning while preserving data boundaries?"
 
 ---
 
 ## See Also
 
 - [[rounds/systems-design]] - full Round 4 guide
+- [[rounds/round-4-interview-questions]] - spoken-answer drill bank
 - [[concepts/systems-design-patterns]] - pattern reference
 - [[concepts/soc-domain]] - SOC workflow context
 - [[concepts/agentic-ai]] - RAG, feedback loops, and agent architecture

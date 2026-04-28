@@ -14,7 +14,7 @@ Master catalog of all pages. Updated on every ingest or major addition.
 - [Live Coding Round](rounds/live-coding.md) — ✅ DONE — CoderPad, StackExchange API, 60 min, 7 evaluation dimensions
 - [Systems Design](rounds/systems-design.md) — 🔥 NEXT — Most revealing round per Darwayne; open-ended, approach matters most
 - [Round 4 Interview Questions](rounds/round-4-interview-questions.md) — Spoken-answer drill bank for Systems Design: clarification, architecture, enrichment, retrieval, failure modes
-- [Round 4 Cheat Sheet](rounds/round-4-cheat-sheet.md) — Final-scan systems design cheat sheet: opener, anchor architecture, scenario cards, tradeoffs, metrics, failure modes
+- [Round 4 Cheat Sheet](rounds/round-4-cheat-sheet.md) — Glanceable final-scan systems design cheat sheet: opener, anchor architecture, component cards, scenario cards, failure-mode drills, tradeoffs, metrics
 - [Culture Round](rounds/culture.md) — Panther's 3 values, behavioral questions, what they're assessing
 
 ## Project Stories
