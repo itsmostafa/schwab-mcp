@@ -40,6 +40,12 @@ Ingested `raw/round-4-interview-questions.md` into the maintained wiki question 
 
 ---
 
+## [2026-04-28] update | Idempotency key section added to Round 4 cheat sheet
+
+Updated `wiki/rounds/round-4-cheat-sheet.md` with an Idempotency + Idempotency Keys component card covering key shape, storage, write flow, side effects, TTL, failure modes, and a spoken Panther alert duplicate example. Updated `wiki/index.md`.
+
+---
+
 ## [2026-04-27] resource | CSET AI chatbot interview story created
 
 Researched private GitHub repo `itsmostafa/cset-ai-chatbot` and CISA CSET public context. Created `wiki/projects/cset-ai-chatbot-story.md` with an interview talk track, 60-second version, architecture anchor, tradeoffs, likely follow-up answers, Panther bridge, and overclaiming guardrails. Updated `wiki/index.md`.

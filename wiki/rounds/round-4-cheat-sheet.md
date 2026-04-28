@@ -138,10 +138,28 @@ Key sentence:
 |---|---|
 | Say | "Use a durable stream partitioned by tenant, with idempotent processing." |
 | Why | Decouples alert spikes from triage workers. |
-| Design | `tenant_id` partitioning, event IDs, dedupe table, DLQ. |
+| Design | `tenant_id` partitioning, event IDs, idempotency keys, dedupe table, DLQ. |
 | Failure | Queue lag, duplicate processing, poison messages. |
 | Detect | Oldest message age, consumer lag, retry/DLQ rate. |
 | Mitigate | Autoscale workers, backpressure, severity priority, idempotency keys. |
+
+### Idempotency + Idempotency Keys
+
+| Field | Quick Reference |
+|---|---|
+| Say | "Retries are inevitable, so writes and side effects need idempotency keys." |
+| Meaning | Same request/event can be processed more than once but produces one durable outcome. |
+| Key shape | `tenant_id + source + external_event_id` for incoming events; client-provided `Idempotency-Key` for API writes/actions. |
+| Store | Idempotency table/cache with key, request hash, status, result pointer, created/expires timestamps. |
+| Flow | On write: check key -> if completed, return stored result -> if in progress, reject or wait -> else reserve key and process. |
+| Side effects | Apply the same key to alert creation, ticket creation, notification sends, and auto-actions. |
+| TTL | Keep keys long enough to cover retry windows and replay risk; use longer retention for high-impact actions. |
+| Failure | Duplicate alerts, duplicate tickets, repeated analyst notifications, repeated containment actions. |
+| Mitigate | Atomic key reservation, unique DB constraint, request-hash validation, transaction/outbox for external calls. |
+
+Spoken example:
+
+> "If Panther receives the same alert twice because a producer retries after a timeout, I would compute an idempotency key from tenant, source, and source alert ID. The triage service first reserves that key in a dedupe/idempotency store. If the key already completed, it returns the existing alert/triage result instead of creating another alert or rerunning side effects. If the same key arrives with a different request hash, that is a client or producer bug and should be rejected or sent to review."
 
 ### Enrichment Fan-Out
 
