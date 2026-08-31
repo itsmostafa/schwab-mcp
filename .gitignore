@@ -1,2 +1,4 @@
 .DS_Store
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/commands/**
