@@ -1,14 +1,14 @@
-# Build Sia — an agent-native personal knowledge system
+# Build Ren — an agent-native personal knowledge system
 
-Build an open-source project called **Sia**, named after the ancient Egyptian concept/personification of perception, knowledge, and understanding.
+Build an open-source project called **Ren**, named after the ancient Egyptian concept/personification of perception, knowledge, and understanding.
 
-Sia is a **private, local-first, agent-native personal knowledge system**. It is not meant to be a Notion clone. The core idea is that users should be able to dump raw thoughts, notes, observations, project ideas, decisions, and Kaizen-style brain dumps into the system, while AI agents continuously organize, connect, synthesize, and maintain the resulting knowledge base.
+Ren is a **private, local-first, agent-native personal knowledge system**. It is not meant to be a Notion clone. The core idea is that users should be able to dump raw thoughts, notes, observations, project ideas, decisions, and Kaizen-style brain dumps into the system, while AI agents continuously organize, connect, synthesize, and maintain the resulting knowledge base.
 
 The application itself should be open source and live in GitHub. User data must remain private and must never be committed to the application repository.
 
 ## Core product philosophy
 
-Sia should treat the user's knowledge as portable data, not as application-owned state.
+Ren should treat the user's knowledge as portable data, not as application-owned state.
 
 The system should have two primary interfaces:
 
@@ -43,7 +43,7 @@ Prefer simple, local-first technologies over cloud infrastructure.
 
 Avoid unnecessary dependencies, databases, services, and infrastructure.
 
-Sia should be able to run comfortably on an always-on Mac mini.
+Ren should be able to run comfortably on an always-on Mac mini.
 
 ## Repository and private-data separation
 
@@ -54,15 +54,15 @@ Private user data should live outside the repository whenever possible.
 Support something like:
 
 ```text
-~/code/sia/
+~/code/ren/
     src/
     public/
     packages/
     package.json
     astro.config.*
-    sia.config.*
+    ren.config.*
 
-~/data/sia/
+~/data/ren/
     inbox/
     knowledge/
     runtime/
@@ -71,7 +71,7 @@ Support something like:
 Use a configurable environment variable such as:
 
 ```text
-SIA_DATA_DIR=~/data/sia
+REN_DATA_DIR=~/data/ren
 ```
 
 The application may optionally default to a local ignored directory for development, but production usage should encourage external data storage.
@@ -91,9 +91,9 @@ Knowledge should remain:
 - agent-readable
 - minimally proprietary
 
-Do not introduce a Sia-specific proprietary document format unless absolutely necessary.
+Do not introduce a Ren-specific proprietary document format unless absolutely necessary.
 
-Sia may extend OKF metadata with application-specific fields where useful.
+Ren may extend OKF metadata with application-specific fields where useful.
 
 Example:
 
@@ -106,7 +106,7 @@ tags:
   - transcription
 created_at: 2026-08-29
 updated_at: 2026-08-29
-created_by: sia-agent
+created_by: ren-agent
 verification: unverified
 sources:
   - inbox/2026-08-29-001.md
@@ -177,7 +177,7 @@ I need to benchmark WhisperKit.
 The kitchen drawer keeps becoming a mess.
 ```
 
-Sia should preserve the original input and then derive useful structured knowledge.
+Ren should preserve the original input and then derive useful structured knowledge.
 
 The AI may classify content into concepts such as:
 
@@ -214,11 +214,11 @@ Distinguish between:
 → decision
 ```
 
-A key goal of Sia is to identify repeated patterns across time.
+A key goal of Ren is to identify repeated patterns across time.
 
 For example, multiple independent notes about context switching should eventually be recognized as one recurring friction pattern.
 
-Sia should be able to generate something like:
+Ren should be able to generate something like:
 
 ```text
 Recurring friction:
@@ -265,7 +265,7 @@ Provenance between these stages should be retained where practical.
 
 Medallion architecture is a useful mental model but is **not a primary product requirement**.
 
-Do not overengineer Sia around Bronze/Silver/Gold terminology.
+Do not overengineer Ren around Bronze/Silver/Gold terminology.
 
 If it naturally improves the internal design, the approximate mapping is:
 
@@ -289,7 +289,7 @@ However:
 
 ## Knowledge relationships
 
-Sia should automatically support relationships between knowledge.
+Ren should automatically support relationships between knowledge.
 
 Examples:
 
@@ -438,7 +438,7 @@ A completely local, non-vector mode should work.
 
 ## MCP server
 
-Build an MCP server as a first-class part of Sia.
+Build an MCP server as a first-class part of Ren.
 
 The MCP server should expose structured access to knowledge rather than rendered HTML.
 
@@ -528,13 +528,13 @@ Tailscale
 user devices + trusted agents
 ```
 
-Sia should not require public internet exposure.
+Ren should not require public internet exposure.
 
 Do not require Auth0, Clerk, Firebase Auth, Supabase Auth, or another cloud identity system for the default local deployment.
 
 For the initial version, trust the Tailscale network boundary.
 
-Design the architecture so stronger authentication can be added later if Sia is exposed beyond the tailnet.
+Design the architecture so stronger authentication can be added later if Ren is exposed beyond the tailnet.
 
 Do not open inbound router ports.
 
@@ -558,7 +558,7 @@ Consider filesystem locking or equivalent protection against simultaneous writer
 
 ## AI provider independence
 
-Sia should not depend on one AI provider.
+Ren should not depend on one AI provider.
 
 Design clear interfaces for AI capabilities.
 
@@ -594,7 +594,7 @@ Cloud services should be optional integrations rather than foundational dependen
 
 ## Privacy
 
-Assume Sia may contain extremely private personal information.
+Assume Ren may contain extremely private personal information.
 
 Therefore:
 
@@ -616,7 +616,7 @@ Possible example:
 
 ```ts
 export default {
-  dataDir: process.env.SIA_DATA_DIR,
+  dataDir: process.env.REN_DATA_DIR,
   search: {
     semantic: false
   },
@@ -638,21 +638,21 @@ Add a minimal CLI if it helps the architecture.
 Useful commands could include:
 
 ```bash
-sia init
+ren init
 
-sia dev
+ren dev
 
-sia capture "..."
+ren capture "..."
 
-sia reindex
+ren reindex
 
-sia doctor
+ren doctor
 
-sia serve
+ren serve
 
-sia export
+ren export
 
-sia validate
+ren validate
 ```
 
 Do not let CLI work delay the core website/MCP implementation.
@@ -673,7 +673,7 @@ Avoid rebuilding the entire system unnecessarily.
 Also support a full deterministic rebuild:
 
 ```bash
-sia reindex
+ren reindex
 ```
 
 ## Data model
@@ -733,9 +733,9 @@ Do not overcomplicate this in v1, but design metadata so it can evolve.
 
 ## Editing model
 
-The user should be able to manually edit Markdown files without breaking Sia.
+The user should be able to manually edit Markdown files without breaking Ren.
 
-Sia must not require all mutations to occur through the UI.
+Ren must not require all mutations to occur through the UI.
 
 External editors such as:
 
@@ -750,7 +750,7 @@ The indexing layer should notice and incorporate changes.
 
 ## Open-source experience
 
-The public repository should be polished enough that another person can clone and run Sia.
+The public repository should be polished enough that another person can clone and run Ren.
 
 Provide:
 
@@ -770,7 +770,7 @@ The project should have an obvious initial workflow:
 
 ```bash
 git clone ...
-cd sia
+cd ren
 npm install
 npm run setup
 npm run dev
@@ -779,7 +779,7 @@ npm run dev
 Then:
 
 ```text
-Open Sia
+Open Ren
 → paste a brain dump
 → see it saved
 → see structured knowledge appear
@@ -804,7 +804,7 @@ Avoid visual gimmicks.
 
 Do not design it as a generic SaaS dashboard.
 
-Sia should feel like a private knowledge environment.
+Ren should feel like a private knowledge environment.
 
 ## Important architectural principle
 
@@ -823,7 +823,7 @@ Application
 
 The application must never become the only place where the user's knowledge can be interpreted.
 
-If Sia disappears, the user should still have a directory full of useful Markdown files.
+If Ren disappears, the user should still have a directory full of useful Markdown files.
 
 ## Implementation priorities
 
@@ -947,11 +947,11 @@ A successful initial version should make this workflow feel effortless:
 ```text
 User:
 "Brain dump: I keep losing context when I switch between projects.
-Maybe Sia should save a quick checkpoint whenever I switch."
+Maybe Ren should save a quick checkpoint whenever I switch."
 
         ↓
 
-Sia preserves raw capture.
+Ren preserves raw capture.
 
         ↓
 
@@ -976,8 +976,8 @@ User can later ask an AI agent:
 MCP returns the relevant synthesized knowledge and supporting raw sources.
 ```
 
-The defining characteristic of Sia is:
+The defining characteristic of Ren is:
 
-**Users capture thoughts. Sia turns those thoughts into evolving understanding without requiring users to manually organize their lives into folders, databases, and tags.**
+**Users capture thoughts. Ren turns those thoughts into evolving understanding without requiring users to manually organize their lives into folders, databases, and tags.**
 
 Start by inspecting the repository if one already exists, then produce a concise implementation plan and begin building the smallest coherent end-to-end version. Prefer working software over elaborate abstractions. Make sensible decisions without repeatedly asking for clarification, and document any assumptions you make.

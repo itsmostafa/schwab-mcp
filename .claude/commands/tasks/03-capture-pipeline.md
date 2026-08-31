@@ -7,7 +7,7 @@
 ## Objective
 
 Let a user (or, later, an MCP client) submit raw text with zero required
-structure, and have it land immutably in `$SIA_DATA_DIR/inbox/`. This is the
+structure, and have it land immutably in `$REN_DATA_DIR/inbox/`. This is the
 single most important interaction in the product per the spec — get it
 simple and reliable before anything fancier.
 

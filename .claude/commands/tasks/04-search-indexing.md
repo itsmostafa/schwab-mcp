@@ -8,14 +8,14 @@
 
 Derived, rebuildable SQLite state that makes keyword search fast, without the
 Markdown/OKF files ever stopping being canonical. If the SQLite file is
-deleted, `sia reindex` must reconstruct it fully from source.
+deleted, `ren reindex` must reconstruct it fully from source.
 
 ## Scope
 
 In scope:
-- `runtime/sia.db` schema: a documents table (id, path, type, title, tags, timestamps, verified/status) and an FTS5 virtual table for full-text/BM25 search over title + body.
+- `runtime/ren.db` schema: a documents table (id, path, type, title, tags, timestamps, verified/status) and an FTS5 virtual table for full-text/BM25 search over title + body.
 - `src/lib/search/index.ts`: `indexDocument(doc)`, `removeDocument(id)`, `search(query, opts)` returning ranked results with snippets.
-- `sia reindex` CLI command (or `npm run reindex` if the CLI itself is deferred — see Task 01/12 on CLI scope): wipes and rebuilds the whole index from `knowledge/` (and optionally `inbox/`) deterministically — same input files must produce the same index content on every run.
+- `ren reindex` CLI command (or `npm run reindex` if the CLI itself is deferred — see Task 01/12 on CLI scope): wipes and rebuilds the whole index from `knowledge/` (and optionally `inbox/`) deterministically — same input files must produce the same index content on every run.
 - A file watcher (dev-mode, e.g. via `chokidar` or Node's built-in `fs.watch` if sufficient — prefer the smaller dependency) over `knowledge/`: on add/change, re-validate + re-index that one document; on delete, remove it from the index. No full rebuild on every change.
 - Tests: reindex determinism (two runs on the same fixture set produce identical index contents), incremental update on file change, incremental removal on file delete, search ranks an exact-title match above an incidental body match.
 
@@ -26,12 +26,12 @@ Out of scope: semantic/vector search (Task 11), reranking/hybrid combination (Ta
 - `src/lib/search/schema.sql` (or inline schema).
 - `src/lib/search/index.ts`.
 - File watcher wiring (dev server integration).
-- `sia reindex` command.
+- `ren reindex` command.
 - Tests.
 
 ## Acceptance criteria
 
-- [ ] Deleting `runtime/sia.db` and running `sia reindex` fully restores search functionality with no data loss (source files are canonical).
+- [ ] Deleting `runtime/ren.db` and running `ren reindex` fully restores search functionality with no data loss (source files are canonical).
 - [ ] Editing a file in `knowledge/` while the dev server runs updates search results without a full reindex.
 - [ ] `search("some phrase")` returns ranked, relevant results with snippets for the example knowledge docs.
 - [ ] Reindex is deterministic across repeated runs on unchanged input.

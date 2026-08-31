@@ -1,4 +1,4 @@
-# Sia — shared conventions and locked decisions
+# Ren — shared conventions and locked decisions
 
 Every task file in this directory assumes these decisions — read this file
 before starting any numbered task. Each numbered task file is self-contained
@@ -45,7 +45,7 @@ src/
   components/   # Astro/UI islands
 examples/
   knowledge/    # tracked, non-private demo OKF documents — used in docs, tests, screenshots
-scripts/        # sia CLI entry points
+scripts/        # ren CLI entry points
 ```
 
 `src/mcp` and `src/pages` both depend on `src/lib`; they must not depend on
@@ -61,16 +61,16 @@ rendered HTML — it reads the same document model the website reads.
 
 ## Data directory
 
-`SIA_DATA_DIR` env var, resolved in `src/lib/config`. Structure:
+`REN_DATA_DIR` env var, resolved in `src/lib/config`. Structure:
 
 ```
-$SIA_DATA_DIR/
+$REN_DATA_DIR/
   inbox/     # raw immutable captures, one file per capture, append-only
   knowledge/ # OKF/Markdown structured knowledge (notes, projects, decisions, ...)
   runtime/   # SQLite db + indexes + logs — fully derived, safe to delete and rebuild
 ```
 
-If `SIA_DATA_DIR` is unset, fall back to `.sia-data/` at the repo root,
+If `REN_DATA_DIR` is unset, fall back to `.ren-data/` at the repo root,
 **gitignored**, for local dev only. On startup, if the fallback is in use, log
 a visible warning that this is not where private production data should live
 (per the spec's privacy section — never let `.gitignore` be the only
@@ -82,8 +82,8 @@ containing real user data.
 
 ## Document model / OKF
 
-Sia's frontmatter targets **OKF v0.2** (github.com/GoogleCloudPlatform/open-knowledge-format)
-as the wire format, extended with Sia-specific fields. Reuse OKF's own field
+Ren's frontmatter targets **OKF v0.2** (github.com/GoogleCloudPlatform/open-knowledge-format)
+as the wire format, extended with Ren-specific fields. Reuse OKF's own field
 names for concepts OKF already defines, rather than inventing parallel ones —
 this is a correction to the illustrative frontmatter example in the spec,
 which uses `created_by`/`verification` where OKF already has `generated`/`verified`:
@@ -96,8 +96,8 @@ which uses `created_by`/`verification` where OKF already has `generated`/`verifi
 | `generated` | OKF | who/what produced this (human vs. agent, model id) |
 | `verified` | OKF | trust tier: unverified → machine-confirmed → human-reviewed |
 | `status`, `stale_after` | OKF | lifecycle / staleness |
-| `id` | Sia extension | stable ULID, independent of file path — see below |
-| `created_at`, `updated_at` | Sia extension | OKF doesn't define timestamps beyond `stale_after`; keep these |
+| `id` | Ren extension | stable ULID, independent of file path — see below |
+| `created_at`, `updated_at` | Ren extension | OKF doesn't define timestamps beyond `stale_after`; keep these |
 
 Document loading/validation (Task 02) must implement this table as the schema,
 not the spec's literal example block.

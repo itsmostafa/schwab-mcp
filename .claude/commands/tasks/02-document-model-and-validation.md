@@ -7,7 +7,7 @@
 ## Objective
 
 A `src/lib/document` module that can load a Markdown+YAML-frontmatter file
-from disk, validate it against Sia's OKF-based schema, and return a typed
+from disk, validate it against Ren's OKF-based schema, and return a typed
 document object — or a structured error for malformed input. This is the
 foundation every later task (search, MCP, capture, AI organization) reads
 through; nothing later should parse frontmatter itself.

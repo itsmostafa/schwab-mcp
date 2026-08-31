@@ -12,7 +12,7 @@ so not every agent connection gets write/delete access by default.
 ## Scope
 
 In scope:
-- Capability levels per the spec: `knowledge.read`, `knowledge.search`, `capture.create`, `knowledge.update`, `knowledge.admin`. Implementation: a config-driven allowlist (e.g. in `sia.config.ts` or a separate `mcp.permissions.json`) naming which levels this server instance grants; tools check their required level before executing and return a clear permission-denied error otherwise. Read-only is the out-of-the-box default (matches Task 06).
+- Capability levels per the spec: `knowledge.read`, `knowledge.search`, `capture.create`, `knowledge.update`, `knowledge.admin`. Implementation: a config-driven allowlist (e.g. in `ren.config.ts` or a separate `mcp.permissions.json`) naming which levels this server instance grants; tools check their required level before executing and return a clear permission-denied error otherwise. Read-only is the out-of-the-box default (matches Task 06).
 - Write tools:
   - `capture(text, format?)` / `kaizen_dump(text)` — both wrap Task 03's capture lib (kaizen_dump is just capture with a hint, not a separate storage path).
   - `create_note(...)`, `record_decision(...)`, `create_experiment(...)` — construct valid `knowledge/` documents via Task 02's schema (assign `id`, `created_at`, `generated: {by: "agent", ...}` provenance), write atomically (temp file + rename), then trigger Task 04's incremental indexer.

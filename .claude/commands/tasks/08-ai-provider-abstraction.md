@@ -14,7 +14,7 @@ In scope:
 - `src/lib/ai/provider.ts`: a small interface — something like `complete(prompt, opts) -> text` and/or `classify(text, labels) -> label` — sized to what Task 09 actually needs, not a general chat-completion SDK wrapper. Keep the surface area small.
 - Two concrete adapters: **Anthropic** and **Ollama** (per `00-conventions.md` — the rest of the spec's provider list stays as documented-but-unimplemented interface targets, not stub files, unless a stub genuinely clarifies the interface).
 - A `"none"` provider (default) that makes AI-dependent code paths no-op cleanly — e.g. Task 09's classification step should skip/queue rather than error when `ai.provider: "none"`.
-- Config wiring in `sia.config.ts`: `ai.provider`, plus whatever each adapter needs (API key env var name for Anthropic, base URL for Ollama) — secrets via env vars only, never in config files, per the spec's privacy section.
+- Config wiring in `ren.config.ts`: `ai.provider`, plus whatever each adapter needs (API key env var name for Anthropic, base URL for Ollama) — secrets via env vars only, never in config files, per the spec's privacy section.
 - A visible indicator (log line at minimum; UI badge is a nice-to-have, not required) whenever external inference is actually enabled — "clearly identify when external inference is enabled" is an explicit privacy requirement, not just a nicety.
 - Tests: provider selection from config, `"none"` provider never throws and never makes a network call, Anthropic/Ollama adapters mockable (don't require live credentials in CI).
 
