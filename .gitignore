@@ -2,3 +2,6 @@
 .claude/*
 !.claude/commands/
 !.claude/commands/**
+/schwab
+.env
+.task/
