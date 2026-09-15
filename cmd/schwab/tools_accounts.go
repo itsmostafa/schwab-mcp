@@ -102,12 +102,13 @@ type orderShape struct {
 }
 
 // checkOrder re-quotes an order's symbols just before it is sent, because the agent
-// built the order from prices that may be minutes old. It rejects uncapped order types
-// (unless cfg.AllowMarketOrders), legs without a real-time quote on the side they trade against,
-// and single-leg LIMIT (or already-triggered STOP_LIMIT) orders that cross the live
+// built the order from prices that may be minutes old. Anywhere in the order tree it rejects
+// uncapped order types (unless cfg.AllowMarketOrders) and legs without a real-time quote.
+// For orders that can execute now it also rejects legs with no bid/ask on the side they trade
+// against, and single-leg LIMIT (or already-triggered STOP_LIMIT) orders that cross the live
 // bid/ask by more than cfg.MaxPriceDeviationBps. Resting limits below the ask (buys)
-// or above the bid (sells) always pass.
-// Children of a TRIGGER order are not checked: Schwab executes them on live prices.
+// or above the bid (sells) always pass. Children of a TRIGGER order wait for their parent
+// to fill, so they get no bid/ask or price band check.
 func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config) error {
 	b, err := json.Marshal(order)
 	if err != nil {
@@ -122,9 +123,21 @@ func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config
 	if top.OrderType == "" && len(top.ChildOrderStrategies) > 0 {
 		orders = top.ChildOrderStrategies
 	}
+	// all is every order in the tree; wrappers (no orderType, only children) are skipped.
+	var all []orderShape
+	var walk func(o orderShape)
+	walk = func(o orderShape) {
+		if o.OrderType != "" || len(o.ChildOrderStrategies) == 0 {
+			all = append(all, o)
+		}
+		for _, ch := range o.ChildOrderStrategies {
+			walk(ch)
+		}
+	}
+	walk(top)
 
 	var symbols []string
-	for _, o := range orders {
+	for _, o := range all {
 		if !cfg.AllowMarketOrders && !slices.Contains(cappedOrderTypes, o.OrderType) {
 			return fmt.Errorf("order not sent: orderType %q can fill at any price; use a LIMIT-type order, "+
 				"or set SCHWAB_ALLOW_MARKET_ORDERS=true", o.OrderType)
@@ -153,17 +166,20 @@ func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config
 		return fmt.Errorf("order not sent: live quote check failed: %w", err)
 	}
 
+	for _, sym := range symbols {
+		if q, ok := quotes[sym]; !ok || q.Realtime == nil || !*q.Realtime {
+			return fmt.Errorf("order not sent: no real-time quote for %s (live bid %g, ask %g, last %g)",
+				sym, q.Quote.BidPrice, q.Quote.AskPrice, q.Quote.LastPrice)
+		}
+	}
+
 	tol := float64(cfg.MaxPriceDeviationBps) / 1e4
 	for _, o := range orders {
 		for _, l := range o.OrderLegCollection {
 			sym, buy := l.Instrument.Symbol, strings.HasPrefix(l.Instruction, "BUY")
-			q, ok := quotes[sym]
+			q := quotes[sym]
 			live := fmt.Sprintf("(live %s bid %g, ask %g, last %g)", sym, q.Quote.BidPrice, q.Quote.AskPrice, q.Quote.LastPrice)
 			switch {
-			case !ok:
-				return fmt.Errorf("order not sent: no live quote for %s", sym)
-			case q.Realtime == nil || !*q.Realtime:
-				return fmt.Errorf("order not sent: quote for %s is not real-time %s", sym, live)
 			case buy && q.Quote.AskPrice <= 0:
 				return fmt.Errorf("order not sent: no live ask for %s %s", sym, live)
 			case !buy && q.Quote.BidPrice <= 0:

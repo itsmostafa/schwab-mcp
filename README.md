@@ -161,7 +161,7 @@ An agent builds orders from prices it fetched earlier, and markets move in the s
 - a leg's quote is not real-time, or has no bid (sells) or ask (buys)
 - a single-leg `LIMIT` buy (or a `STOP_LIMIT` whose stop the market already passed, judged by its `stopType`; `STANDARD` counts as passed when either the last trade or the bid/ask has) is priced more than `SCHWAB_MAX_PRICE_DEVIATION_BPS` above the live ask, or a sell that far below the live bid
 
-Resting limits (a buy below the ask, a sell above the bid) always pass. Multi-leg prices and the children of `TRIGGER` orders are not band-checked. The rejection includes the live bid, ask and last so the agent can rebuild the order. `get_quotes` and `get_option_chain` start with a warning line when Schwab serves delayed data.
+Resting limits (a buy below the ask, a sell above the bid) always pass. Multi-leg prices are not band-checked. The children of a `TRIGGER` order (for example a bracket's take-profit and stop-loss) get the order-type and real-time checks, but no bid/ask or price band check, since they wait for the parent to fill. The rejection includes the live bid, ask and last so the agent can rebuild the order. `get_quotes` and `get_option_chain` start with a warning line when Schwab serves delayed data.
 
 ## Tools
 

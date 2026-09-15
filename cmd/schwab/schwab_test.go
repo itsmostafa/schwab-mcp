@@ -288,6 +288,13 @@ func TestOrderPriceCheck(t *testing.T) {
 		o["orderType"], o["stopPrice"], o["stopType"] = "STOP_LIMIT", stop, stopType
 		return o
 	}
+	// bracket is a BUY LIMIT AAPL 100 that triggers an OCO of children.
+	bracket := func(children ...map[string]any) map[string]any {
+		oco := map[string]any{"orderStrategyType": "OCO", "childOrderStrategies": children}
+		o := limitOrder("BUY", "AAPL", 100)
+		o["orderStrategyType"], o["childOrderStrategies"] = "TRIGGER", []any{oco}
+		return o
+	}
 
 	for _, tc := range []struct {
 		name    string
@@ -317,9 +324,14 @@ func TestOrderPriceCheck(t *testing.T) {
 		{"market allowed", loose, market("MARKET"), ""},
 		{"OCO hides market child", strict, map[string]any{"orderStrategyType": "OCO",
 			"childOrderStrategies": []any{limitOrder("SELL", "AAPL", 120), market("MARKET")}}, "can fill at any price"},
-		{"delayed quote", strict, limitOrder("BUY", "SLOW", 10), "not real-time"},
+		{"bracket hides stop child", strict, bracket(limitOrder("SELL", "AAPL", 120), market("STOP")), "can fill at any price"},
+		{"bracket stop child allowed", loose, bracket(limitOrder("SELL", "AAPL", 120), market("STOP")), ""},
+		{"bracket stop-limit child", strict, bracket(limitOrder("SELL", "AAPL", 120), stopLimit("SELL", "AAPL", "", 95, 94)), ""},
+		{"bracket child delayed quote", strict, bracket(limitOrder("SELL", "SLOW", 11)), "no real-time quote"},
+		{"bracket child with no bid rests", strict, bracket(limitOrder("SELL", "DEAD", 1)), ""},
+		{"delayed quote", strict, limitOrder("BUY", "SLOW", 10), "no real-time quote"},
 		{"no ask", strict, limitOrder("BUY", "DEAD", 1), "no live ask"},
-		{"unknown symbol", strict, limitOrder("BUY", "NOPE", 1), "no live quote"},
+		{"unknown symbol", strict, limitOrder("BUY", "NOPE", 1), "no real-time quote"},
 	} {
 		fake.mu.Lock()
 		n := len(fake.reqs)
