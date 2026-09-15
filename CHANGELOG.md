@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/itsmostafa/schwab-mcp/compare/v0.1.0...v0.2.0) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **trading:** with SCHWAB_ALLOW_TRADING=true, MARKET, STOP and other uncapped order types are rejected unless SCHWAB_ALLOW_MARKET_ORDERS=true is set. LIMIT orders that cross the live market by more than 50 bps are rejected; tune with SCHWAB_MAX_PRICE_DEVIATION_BPS.
+
+### Features
+
+* **cli:** add schwab mcp setup to register with Claude Code and Codex ([78e5717](https://github.com/itsmostafa/schwab-mcp/commit/78e57170f3bbfbc410e91bad82e912e93d22edce))
+* **cli:** add schwab mcp setup to register with Claude Code and Codex ([0725504](https://github.com/itsmostafa/schwab-mcp/commit/0725504d29015f3975a7e81ff20c101176920993))
+* **config:** cobra CLI and ~/.config/schwab credentials file ([03ceb4e](https://github.com/itsmostafa/schwab-mcp/commit/03ceb4e61094b5f29d9d8257d32a213707ed3aa7))
+* **config:** read app credentials from ~/.config/schwab/config ([79c36dd](https://github.com/itsmostafa/schwab-mcp/commit/79c36dd53f70317523fbb6430deff136eff39d96))
+* **trading:** re-quote and reject orders built on stale prices ([59bea93](https://github.com/itsmostafa/schwab-mcp/commit/59bea93bba06cb9521caca1bbe748e065384d3fb))
+
+
+### Bug Fixes
+
+* **cli:** restore Claude entry if replacement fails ([cb513ca](https://github.com/itsmostafa/schwab-mcp/commit/cb513ca59d584e4b05a42cf6fc59070854ba308f))
+* **trading:** check order types and quotes in TRIGGER children ([85bcc0d](https://github.com/itsmostafa/schwab-mcp/commit/85bcc0dc445573c15f312b421a3794de63bba43b))
+
 ## 0.1.0 (2026-09-15)
 
 
