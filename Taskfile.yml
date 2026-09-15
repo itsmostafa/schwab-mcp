@@ -1,0 +1,62 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: Build the schwab binary
+    cmds:
+      - go build -o schwab ./cmd/schwab
+    sources:
+      - cmd/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - schwab
+
+  test:
+    desc: Run tests with the race detector
+    cmds:
+      - go test -race -count=1 ./...
+
+  lint:
+    desc: Check formatting and vet
+    cmds:
+      - test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - go vet ./...
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - gofmt -w .
+
+  check:
+    desc: Lint and test
+    cmds:
+      - task: lint
+      - task: test
+
+  install:
+    desc: Install schwab into GOBIN
+    cmds:
+      - go install ./cmd/schwab
+
+  login:
+    desc: Log in to Schwab (needs SCHWAB_APP_KEY and SCHWAB_APP_SECRET)
+    deps: [build]
+    cmds:
+      - ./schwab login
+
+  inspect:
+    desc: Open the MCP Inspector against the server
+    deps: [build]
+    cmds:
+      - npx @modelcontextprotocol/inspector ./schwab
+
+  tidy:
+    desc: Tidy go.mod
+    cmds:
+      - go mod tidy
