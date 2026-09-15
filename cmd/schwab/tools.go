@@ -31,7 +31,7 @@ func destructive() *mcp.ToolAnnotations {
 	return &mcp.ToolAnnotations{DestructiveHint: new(true)}
 }
 
-func registerTools(s *mcp.Server, c *Client, allowTrading bool) {
+func registerTools(s *mcp.Server, c *Client, cfg Config) {
 	add(s, &mcp.Tool{
 		Name: "login",
 		Description: "Start Schwab OAuth login. Returns a URL the user must open in a browser to approve access; " +
@@ -45,6 +45,6 @@ func registerTools(s *mcp.Server, c *Client, allowTrading bool) {
 		return []byte("Open this URL in a browser and approve access (accept the self-signed certificate warning " +
 			"on the redirect), then retry the previous request:\n" + authURL), nil
 	})
-	registerAccountTools(s, c, allowTrading)
+	registerAccountTools(s, c, cfg)
 	registerMarketTools(s, c)
 }

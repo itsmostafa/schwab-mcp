@@ -113,12 +113,13 @@ type fakeSchwab struct {
 	mu       sync.Mutex
 	reqs     []string
 	location string
+	quote    string // body served for GET /marketdata/v1/quotes
 }
 
 func (f *fakeSchwab) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	f.reqs = append(f.reqs, r.Method+" "+r.URL.RequestURI())
-	loc := f.location
+	loc, quote := f.location, f.quote
 	f.mu.Unlock()
 	if r.Header.Get("Authorization") != "Bearer tok" {
 		http.Error(w, "bad auth", http.StatusUnauthorized)
@@ -133,17 +134,21 @@ func (f *fakeSchwab) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		return
 	}
+	if r.URL.Path == "/marketdata/v1/quotes" && quote != "" {
+		w.Write([]byte(quote))
+		return
+	}
 	w.Write([]byte(`{}`))
 }
 
 // session connects an in-memory MCP client to a server backed by fake.
-func session(t *testing.T, fake http.Handler, allowTrading bool) *mcp.ClientSession {
+func session(t *testing.T, fake http.Handler, cfg Config) *mcp.ClientSession {
 	srv := httptest.NewServer(fake)
 	t.Cleanup(srv.Close)
 	a := NewAuth(Config{TokenFile: filepath.Join(t.TempDir(), "token.json")})
 	a.tok = &token{AccessToken: "tok", ExpiresAt: time.Now().Add(time.Hour)}
 	s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: "test"}, nil)
-	registerTools(s, &Client{BaseURL: srv.URL, Auth: a, HTTP: srv.Client()}, allowTrading)
+	registerTools(s, &Client{BaseURL: srv.URL, Auth: a, HTTP: srv.Client()}, cfg)
 
 	st, ct := mcp.NewInMemoryTransports()
 	if _, err := s.Connect(t.Context(), st, nil); err != nil {
@@ -169,20 +174,25 @@ func toolNames(t *testing.T, cs *mcp.ClientSession) []string {
 	return names
 }
 
-func call(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) string {
+// callResult calls a tool and returns its text and whether it is a tool error.
+func callResult(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) (string, bool) {
 	res, err := cs.CallTool(t.Context(), &mcp.CallToolParams{Name: name, Arguments: args})
 	if err != nil {
 		t.Fatal(err)
 	}
-	text := res.Content[0].(*mcp.TextContent).Text
-	if res.IsError {
+	return res.Content[0].(*mcp.TextContent).Text, res.IsError
+}
+
+func call(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) string {
+	text, isErr := callResult(t, cs, name, args)
+	if isErr {
 		t.Fatalf("%s: tool error: %s", name, text)
 	}
 	return text
 }
 
 func TestTradingToolsGated(t *testing.T) {
-	names := toolNames(t, session(t, &fakeSchwab{}, false))
+	names := toolNames(t, session(t, &fakeSchwab{}, Config{}))
 	for _, n := range []string{"place_order", "replace_order", "cancel_order"} {
 		if slices.Contains(names, n) {
 			t.Errorf("%s registered without SCHWAB_ALLOW_TRADING", n)
@@ -191,7 +201,7 @@ func TestTradingToolsGated(t *testing.T) {
 	if !slices.Contains(names, "preview_order") || !slices.Contains(names, "get_quotes") {
 		t.Errorf("read-only tools missing: %v", names)
 	}
-	if names := toolNames(t, session(t, &fakeSchwab{}, true)); !slices.Contains(names, "place_order") {
+	if names := toolNames(t, session(t, &fakeSchwab{}, Config{AllowTrading: true})); !slices.Contains(names, "place_order") {
 		t.Errorf("place_order missing with trading enabled: %v", names)
 	}
 }
@@ -214,9 +224,12 @@ func TestOutcomeUnknownOnlyForMutations(t *testing.T) {
 }
 
 func TestToolRequests(t *testing.T) {
-	fake := &fakeSchwab{location: "https://api.schwabapi.com/trader/v1/accounts/H1/orders/12345"}
-	cs := session(t, fake, true)
-	order := map[string]any{"orderType": "MARKET"}
+	fake := &fakeSchwab{
+		location: "https://api.schwabapi.com/trader/v1/accounts/H1/orders/12345",
+		quote:    `{"AAPL":{"realtime":true,"quote":{"bidPrice":99.9,"askPrice":100,"lastPrice":100}}}`,
+	}
+	cs := session(t, fake, Config{AllowTrading: true, MaxPriceDeviationBps: 50})
+	order := limitOrder("BUY", "AAPL", 100)
 
 	if got := call(t, cs, "place_order", map[string]any{"accountHash": "H1", "order": order}); got != "order accepted, orderId: 12345" {
 		t.Errorf("place_order = %q", got)
@@ -232,7 +245,9 @@ func TestToolRequests(t *testing.T) {
 	call(t, cs, "get_quotes", map[string]any{"symbols": []string{"AAPL", "MSFT"}, "indicative": false})
 
 	want := []string{
+		"GET /marketdata/v1/quotes?symbols=AAPL",
 		"POST /trader/v1/accounts/H1/orders",
+		"GET /marketdata/v1/quotes?symbols=AAPL",
 		"POST /trader/v1/accounts/H1/orders",
 		"GET /marketdata/v1/movers/$SPX?sort=VOLUME",
 		"GET /trader/v1/accounts/H1/orders/7",
@@ -242,6 +257,104 @@ func TestToolRequests(t *testing.T) {
 	defer fake.mu.Unlock()
 	if !slices.Equal(fake.reqs, want) {
 		t.Errorf("requests:\n got %q\nwant %q", fake.reqs, want)
+	}
+}
+
+func limitOrder(instruction, symbol string, price any) map[string]any {
+	return map[string]any{"orderType": "LIMIT", "price": price, "orderLegCollection": []any{
+		map[string]any{"instruction": instruction, "quantity": 1, "instrument": map[string]any{"symbol": symbol, "assetType": "EQUITY"}},
+	}}
+}
+
+// An order reaches Schwab only if it passes the live quote check.
+func TestOrderPriceCheck(t *testing.T) {
+	fake := &fakeSchwab{
+		location: "https://api.schwabapi.com/trader/v1/accounts/H1/orders/1",
+		quote: `{"AAPL":{"realtime":true,"quote":{"bidPrice":99.9,"askPrice":100,"lastPrice":100}},
+			"SLOW":{"realtime":false,"quote":{"bidPrice":10,"askPrice":10.1}},
+			"DEAD":{"realtime":true,"quote":{"bidPrice":0,"askPrice":0}},
+			"GAP":{"realtime":true,"quote":{"bidPrice":100.9,"askPrice":101,"lastPrice":99,"mark":100.95}}}`,
+	}
+	strict := session(t, fake, Config{AllowTrading: true, MaxPriceDeviationBps: 50})
+	loose := session(t, fake, Config{AllowTrading: true, MaxPriceDeviationBps: 50, AllowMarketOrders: true})
+	market := func(orderType string) map[string]any {
+		o := limitOrder("BUY", "AAPL", nil)
+		o["orderType"] = orderType
+		delete(o, "price")
+		return o
+	}
+	stopLimit := func(instruction, symbol, stopType string, stop, limit float64) map[string]any {
+		o := limitOrder(instruction, symbol, limit)
+		o["orderType"], o["stopPrice"], o["stopType"] = "STOP_LIMIT", stop, stopType
+		return o
+	}
+	// bracket is a BUY LIMIT AAPL 100 that triggers an OCO of children.
+	bracket := func(children ...map[string]any) map[string]any {
+		oco := map[string]any{"orderStrategyType": "OCO", "childOrderStrategies": children}
+		o := limitOrder("BUY", "AAPL", 100)
+		o["orderStrategyType"], o["childOrderStrategies"] = "TRIGGER", []any{oco}
+		return o
+	}
+
+	for _, tc := range []struct {
+		name    string
+		cs      *mcp.ClientSession
+		order   map[string]any
+		wantErr string // empty means the order must be sent
+	}{
+		{"buy within band", strict, limitOrder("BUY", "AAPL", 100.4), ""},
+		{"resting buy below ask", strict, limitOrder("BUY", "AAPL", 90), ""},
+		{"resting sell above bid", strict, limitOrder("SELL", "AAPL", 120), ""},
+		{"buy crosses ask", strict, limitOrder("BUY", "AAPL", 101), "crosses the live market"},
+		{"sell crosses bid", strict, limitOrder("SELL", "AAPL", "98.00"), "crosses the live market"},
+		{"unreadable price", strict, limitOrder("BUY", "AAPL", "abc"), "cannot read order"},
+		{"NaN price", strict, limitOrder("BUY", "AAPL", "NaN"), "cannot read order"},
+		{"missing price", strict, limitOrder("BUY", "AAPL", nil), "cannot read price"},
+		{"triggered stop-limit crosses ask", strict, stopLimit("BUY", "AAPL", "", 99, 150), "crosses the live market"},
+		{"untriggered stop-limit rests", strict, stopLimit("BUY", "AAPL", "", 105, 150), ""},
+		{"triggered sell stop-limit within band", strict, stopLimit("SELL", "AAPL", "STANDARD", 101, 99.5), ""},
+		// GAP: last 99 is below bid/ask, so the trigger basis decides whether the stop is reached.
+		{"LAST stop not reached", strict, stopLimit("BUY", "GAP", "LAST", 100, 110), ""},
+		{"ASK stop reached", strict, stopLimit("BUY", "GAP", "ASK", 100, 110), "crosses the live market"},
+		{"STANDARD reached on ask", strict, stopLimit("BUY", "GAP", "STANDARD", 100, 110), "crosses the live market"},
+		{"MARK stop not reached", strict, stopLimit("SELL", "GAP", "MARK", 100, 90), ""},
+		{"unknown stopType", strict, stopLimit("BUY", "GAP", "BOGUS", 100, 110), "unsupported stopType"},
+		{"market blocked", strict, market("MARKET"), "can fill at any price"},
+		{"stop blocked", strict, market("STOP"), "can fill at any price"},
+		{"market allowed", loose, market("MARKET"), ""},
+		{"OCO hides market child", strict, map[string]any{"orderStrategyType": "OCO",
+			"childOrderStrategies": []any{limitOrder("SELL", "AAPL", 120), market("MARKET")}}, "can fill at any price"},
+		{"bracket hides stop child", strict, bracket(limitOrder("SELL", "AAPL", 120), market("STOP")), "can fill at any price"},
+		{"bracket stop child allowed", loose, bracket(limitOrder("SELL", "AAPL", 120), market("STOP")), ""},
+		{"bracket stop-limit child", strict, bracket(limitOrder("SELL", "AAPL", 120), stopLimit("SELL", "AAPL", "", 95, 94)), ""},
+		{"bracket child delayed quote", strict, bracket(limitOrder("SELL", "SLOW", 11)), "no real-time quote"},
+		{"bracket child with no bid rests", strict, bracket(limitOrder("SELL", "DEAD", 1)), ""},
+		{"delayed quote", strict, limitOrder("BUY", "SLOW", 10), "no real-time quote"},
+		{"no ask", strict, limitOrder("BUY", "DEAD", 1), "no live ask"},
+		{"unknown symbol", strict, limitOrder("BUY", "NOPE", 1), "no real-time quote"},
+	} {
+		fake.mu.Lock()
+		n := len(fake.reqs)
+		fake.mu.Unlock()
+		text, isErr := callResult(t, tc.cs, "place_order", map[string]any{"accountHash": "H1", "order": tc.order})
+		fake.mu.Lock()
+		sent := slices.Contains(fake.reqs[n:], "POST /trader/v1/accounts/H1/orders")
+		fake.mu.Unlock()
+		if tc.wantErr == "" && (isErr || !sent) || tc.wantErr != "" && (!isErr || sent || !strings.Contains(text, tc.wantErr)) {
+			t.Errorf("%s: sent=%v isErr=%v text=%q, want error %q", tc.name, sent, isErr, text, tc.wantErr)
+		}
+	}
+
+	text, isErr := callResult(t, strict, "replace_order", map[string]any{"accountHash": "H1", "orderId": "7", "order": market("MARKET")})
+	fake.mu.Lock()
+	putSent := slices.Contains(fake.reqs, "PUT /trader/v1/accounts/H1/orders/7")
+	fake.mu.Unlock()
+	if !isErr || putSent || !strings.Contains(text, "can fill at any price") {
+		t.Errorf("replace_order MARKET: sent=%v isErr=%v text=%q", putSent, isErr, text)
+	}
+
+	if got := call(t, strict, "get_quotes", map[string]any{"symbols": []string{"AAPL", "SLOW"}}); !strings.HasPrefix(got, "WARNING: delayed, not real-time quotes for SLOW;") {
+		t.Errorf("get_quotes delayed warning = %q", got)
 	}
 }
 

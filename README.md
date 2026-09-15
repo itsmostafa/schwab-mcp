@@ -96,6 +96,8 @@ This installs `schwab` in `$(go env GOPATH)/bin`.
 | `SCHWAB_CALLBACK_URL` | no | `https://127.0.0.1:8182/callback` (must match the app registration exactly) |
 | `SCHWAB_TOKEN_FILE` | no | `<user config dir>/schwab-mcp/token.json` |
 | `SCHWAB_ALLOW_TRADING` | no | unset. Set to `true` to enable `place_order`, `replace_order`, `cancel_order` |
+| `SCHWAB_ALLOW_MARKET_ORDERS` | no | unset. Set to `true` to allow order types without a price cap (`MARKET`, `STOP`, `TRAILING_STOP`, ...) |
+| `SCHWAB_MAX_PRICE_DEVIATION_BPS` | no | `50`. How far, in basis points, a `LIMIT` price may cross the live bid/ask |
 
 ### 4. Log in
 
@@ -156,6 +158,14 @@ Several clients can run the server at once; they share the token file safely on 
 > With `SCHWAB_ALLOW_TRADING=true`, an agent can place, replace, and cancel **live orders with real money**. Tool descriptions tell the agent to call `preview_order` and confirm with you first, but nothing enforces that. Leave it unset unless you want this, and review every order request before approving the tool call.
 
 Without the flag, only read-only tools and `preview_order` are available.
+
+An agent builds orders from prices it fetched earlier, and markets move in the seconds it spends reasoning. So `place_order` and `replace_order` fetch a fresh quote for every leg right before sending, and reject the order without sending it when:
+
+- the order type has no price cap (`MARKET`, `STOP`, `TRAILING_STOP`, ...), unless `SCHWAB_ALLOW_MARKET_ORDERS=true`
+- a leg's quote is not real-time, or has no bid (sells) or ask (buys)
+- a single-leg `LIMIT` buy (or a `STOP_LIMIT` whose stop the market already passed, judged by its `stopType`; `STANDARD` counts as passed when either the last trade or the bid/ask has) is priced more than `SCHWAB_MAX_PRICE_DEVIATION_BPS` above the live ask, or a sell that far below the live bid
+
+Resting limits (a buy below the ask, a sell above the bid) always pass. Multi-leg prices are not band-checked. The children of a `TRIGGER` order (for example a bracket's take-profit and stop-loss) get the order-type and real-time checks, but no bid/ask or price band check, since they wait for the parent to fill. The rejection includes the live bid, ask and last so the agent can rebuild the order. `get_quotes` and `get_option_chain` start with a warning line when Schwab serves delayed data.
 
 ## Tools
 

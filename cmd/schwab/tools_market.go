@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -75,7 +78,23 @@ func registerMarketTools(s *mcp.Server, c *Client) {
 		Description: "Get quotes for one or more symbols (equities, ETFs, indexes, futures, options).",
 		Annotations: readOnly(),
 	}, func(ctx context.Context, in quotesIn) ([]byte, error) {
-		return c.get(ctx, "/marketdata/v1/quotes", toQuery(in))
+		b, err := c.get(ctx, "/marketdata/v1/quotes", toQuery(in))
+		var quotes map[string]liveQuote
+		if err != nil || json.Unmarshal(b, &quotes) != nil {
+			return b, err
+		}
+		var delayed []string
+		for sym, q := range quotes {
+			if q.Realtime != nil && !*q.Realtime {
+				delayed = append(delayed, sym)
+			}
+		}
+		if len(delayed) == 0 {
+			return b, nil
+		}
+		slices.Sort(delayed)
+		return append([]byte("WARNING: delayed, not real-time quotes for "+strings.Join(delayed, ", ")+
+			"; do not trade on these prices.\n"), b...), nil
 	})
 
 	add(s, &mcp.Tool{
@@ -83,7 +102,14 @@ func registerMarketTools(s *mcp.Server, c *Client) {
 		Description: "Get the option chain for an underlying symbol. Use strikeCount, range, or fromDate/toDate to keep the response small.",
 		Annotations: readOnly(),
 	}, func(ctx context.Context, in chainIn) ([]byte, error) {
-		return c.get(ctx, "/marketdata/v1/chains", toQuery(in))
+		b, err := c.get(ctx, "/marketdata/v1/chains", toQuery(in))
+		var chain struct {
+			IsDelayed bool `json:"isDelayed"`
+		}
+		if err != nil || json.Unmarshal(b, &chain) != nil || !chain.IsDelayed {
+			return b, err
+		}
+		return append([]byte("WARNING: delayed, not real-time option chain; do not trade on these prices.\n"), b...), nil
 	})
 
 	add(s, &mcp.Tool{

@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime/debug"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -31,18 +32,31 @@ func init() {
 type Config struct {
 	AppKey, AppSecret, CallbackURL, TokenFile string
 	AllowTrading                              bool
+	// AllowMarketOrders permits order types without a price cap (MARKET, STOP, ...).
+	AllowMarketOrders bool
+	// MaxPriceDeviationBps is how far a LIMIT order may cross the live bid/ask.
+	MaxPriceDeviationBps int
 }
 
 func loadConfig() (Config, error) {
 	cfg := Config{
-		AppKey:       os.Getenv("SCHWAB_APP_KEY"),
-		AppSecret:    os.Getenv("SCHWAB_APP_SECRET"),
-		CallbackURL:  os.Getenv("SCHWAB_CALLBACK_URL"),
-		TokenFile:    os.Getenv("SCHWAB_TOKEN_FILE"),
-		AllowTrading: os.Getenv("SCHWAB_ALLOW_TRADING") == "true",
+		AppKey:               os.Getenv("SCHWAB_APP_KEY"),
+		AppSecret:            os.Getenv("SCHWAB_APP_SECRET"),
+		CallbackURL:          os.Getenv("SCHWAB_CALLBACK_URL"),
+		TokenFile:            os.Getenv("SCHWAB_TOKEN_FILE"),
+		AllowTrading:         os.Getenv("SCHWAB_ALLOW_TRADING") == "true",
+		AllowMarketOrders:    os.Getenv("SCHWAB_ALLOW_MARKET_ORDERS") == "true",
+		MaxPriceDeviationBps: 50,
 	}
 	if cfg.AppKey == "" || cfg.AppSecret == "" {
 		return cfg, errors.New("SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be set")
+	}
+	if v := os.Getenv("SCHWAB_MAX_PRICE_DEVIATION_BPS"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			return cfg, fmt.Errorf("SCHWAB_MAX_PRICE_DEVIATION_BPS must be a non-negative integer, got %q", v)
+		}
+		cfg.MaxPriceDeviationBps = n
 	}
 	if cfg.CallbackURL == "" {
 		cfg.CallbackURL = "https://127.0.0.1:8182/callback"
@@ -84,7 +98,7 @@ func run() error {
 			Auth:    NewAuth(cfg),
 			HTTP:    &http.Client{Timeout: 30 * time.Second},
 		}
-		registerTools(s, c, cfg.AllowTrading)
+		registerTools(s, c, cfg)
 		return s.Run(ctx, &mcp.StdioTransport{})
 	case "login":
 		cfg, err := loadConfig()
