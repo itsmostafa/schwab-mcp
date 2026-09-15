@@ -47,7 +47,7 @@ schwab login
 
 It prompts for the App Key and Secret the first time and saves them to `~/.config/schwab/config`.
 
-**3. Add it to Claude Code and Codex** ([other clients below](#5-add-to-your-mcp-client)):
+**3. Add it to Claude Code, Claude Desktop, and Codex** ([other clients below](#5-add-to-your-mcp-client)):
 
 ```sh
 schwab mcp setup
@@ -119,7 +119,7 @@ Schwab refresh tokens last 7 days, so log in again about once a week. From a des
 schwab mcp setup
 ```
 
-This registers the running binary with Claude Code (user scope) and Codex, whichever are on `PATH`, passing along every `SCHWAB_*` variable set in your shell. Credentials in `~/.config/schwab/config` are read by the server at launch, so they don't need to be passed. Re-run it to update the entry, for example after setting `SCHWAB_ALLOW_TRADING=true`. To configure a client by hand, use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
+This registers the running binary with Claude Code (user scope) and Codex, whichever are on `PATH`, and with Claude Desktop if it is installed (restart the app afterwards), passing along every `SCHWAB_*` variable set in your shell. Credentials in `~/.config/schwab/config` are read by the server at launch, so they don't need to be passed. Re-run it to update the entry, for example after setting `SCHWAB_ALLOW_TRADING=true`. To configure a client by hand, use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
 
 Claude Code:
 
