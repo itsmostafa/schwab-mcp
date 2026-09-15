@@ -168,6 +168,7 @@ Without the flag, only read-only tools and `preview_order` are available.
 An agent builds orders from prices it fetched earlier, and markets move in the seconds it spends reasoning. So `place_order` and `replace_order` fetch a fresh quote for every leg right before sending, and reject the order without sending it when:
 
 - the order type has no price cap (`MARKET`, `STOP`, `TRAILING_STOP`, ...), unless `SCHWAB_ALLOW_MARKET_ORDERS=true`
+- a leg's instruction does not start with `BUY` or `SELL` (for example `EXCHANGE`, or lowercase `buy`)
 - a leg's quote is not real-time, or has no bid (sells) or ask (buys)
 - a single-leg `LIMIT` buy (or a `STOP_LIMIT` whose stop the market already passed, judged by its `stopType`; `STANDARD` counts as passed when either the last trade or the bid/ask has) is priced more than `SCHWAB_MAX_PRICE_DEVIATION_BPS` above the live ask, or a sell that far below the live bid
 

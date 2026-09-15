@@ -332,6 +332,10 @@ func TestOrderPriceCheck(t *testing.T) {
 		{"delayed quote", strict, limitOrder("BUY", "SLOW", 10), "no real-time quote"},
 		{"no ask", strict, limitOrder("BUY", "DEAD", 1), "no live ask"},
 		{"unknown symbol", strict, limitOrder("BUY", "NOPE", 1), "no real-time quote"},
+		{"lowercase buy", strict, limitOrder("buy", "AAPL", 150), "unsupported instruction"},
+		{"exchange instruction", strict, limitOrder("EXCHANGE", "AAPL", 100), "unsupported instruction"},
+		{"bracket child bad instruction", strict, bracket(limitOrder("SEL", "AAPL", 120)), "unsupported instruction"},
+		{"option buy to open", strict, limitOrder("BUY_TO_OPEN", "AAPL", 100.4), ""},
 	} {
 		fake.mu.Lock()
 		n := len(fake.reqs)
