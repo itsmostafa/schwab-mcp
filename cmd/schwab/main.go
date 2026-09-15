@@ -170,7 +170,7 @@ func newRootCmd() *cobra.Command {
 	mcpCmd := &cobra.Command{Use: "mcp", Short: "Manage MCP client configuration"}
 	mcpCmd.AddCommand(&cobra.Command{
 		Use:   "setup",
-		Short: "Register this binary with Claude Code and Codex",
+		Short: "Register this binary with Claude Code, Claude Desktop, and Codex",
 		Args:  cobra.NoArgs,
 		RunE:  run(runMCPSetup),
 	})

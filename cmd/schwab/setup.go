@@ -61,7 +61,77 @@ func runMCPSetup(ctx context.Context) error {
 			}
 		}
 	}
+
+	// Claude Desktop has no CLI; edit its config file if the app is installed.
+	if dir, err := os.UserConfigDir(); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, "Claude")); err != nil {
+			fmt.Println("Claude Desktop: skipped, not installed (see README to configure by hand)")
+		} else if err := setupClaudeDesktop(filepath.Join(dir, "Claude", "claude_desktop_config.json"), exe, env); err != nil {
+			errs = append(errs, fmt.Errorf("Claude Desktop: %w", err))
+		} else {
+			fmt.Println("Claude Desktop: added schwab; restart the app to load it")
+		}
+	}
 	return errors.Join(errs...)
+}
+
+// setupClaudeDesktop sets the schwab entry in Claude Desktop's config at path,
+// keeping every other key and server intact.
+func setupClaudeDesktop(path, exe string, env []string) error {
+	cfg := map[string]json.RawMessage{}
+	b, err := os.ReadFile(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if len(b) > 0 {
+		if err := json.Unmarshal(b, &cfg); err != nil {
+			return fmt.Errorf("parsing %s: %w", path, err)
+		}
+	}
+	servers := map[string]json.RawMessage{}
+	if raw, ok := cfg["mcpServers"]; ok {
+		if err := json.Unmarshal(raw, &servers); err != nil {
+			return fmt.Errorf("parsing mcpServers in %s: %w", path, err)
+		}
+	}
+
+	entry := struct {
+		Command string            `json:"command"`
+		Env     map[string]string `json:"env,omitempty"`
+	}{Command: exe}
+	for _, kv := range env {
+		k, v, _ := strings.Cut(kv, "=")
+		if entry.Env == nil {
+			entry.Env = map[string]string{}
+		}
+		entry.Env[k] = v
+	}
+	if servers["schwab"], err = json.Marshal(entry); err != nil {
+		return err
+	}
+	if cfg["mcpServers"], err = json.Marshal(servers); err != nil {
+		return err
+	}
+	out, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Write to a temp file and rename, so a failed write can't truncate the
+	// app's config (it also holds the user's preferences).
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".claude_desktop_config-*.json")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(append(out, '\n')); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 // claudeUserEntry returns Claude Code's current user-scope schwab entry, or nil
