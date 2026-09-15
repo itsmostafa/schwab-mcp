@@ -2,20 +2,24 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // version is set by release builds via -ldflags "-X main.version=...".
@@ -29,7 +33,8 @@ func init() {
 	}
 }
 
-// Config holds settings read from SCHWAB_* environment variables.
+// Config holds settings read from SCHWAB_* environment variables, with the app
+// key and secret falling back to ~/.config/schwab/config.
 type Config struct {
 	AppKey, AppSecret, CallbackURL, TokenFile string
 	AllowTrading                              bool
@@ -49,8 +54,8 @@ func loadConfig() (Config, error) {
 		AllowMarketOrders:    os.Getenv("SCHWAB_ALLOW_MARKET_ORDERS") == "true",
 		MaxPriceDeviationBps: 50,
 	}
-	if cfg.AppKey == "" || cfg.AppSecret == "" {
-		return cfg, errors.New("SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be set")
+	if err := loadCredentials(&cfg); err != nil {
+		return cfg, err
 	}
 	if v := os.Getenv("SCHWAB_MAX_PRICE_DEVIATION_BPS"); v != "" {
 		n, err := strconv.Atoi(v)
@@ -70,6 +75,70 @@ func loadConfig() (Config, error) {
 		cfg.TokenFile = filepath.Join(dir, "schwab-mcp", "token.json")
 	}
 	return cfg, nil
+}
+
+// loadCredentials fills in the app key and secret missing from the environment
+// from ~/.config/schwab/config (KEY=value lines). If either is still missing
+// and stdin is a terminal, it prompts for them and saves the file. It never
+// prompts otherwise: under an MCP client, stdin is the protocol stream.
+func loadCredentials(cfg *Config) error {
+	if cfg.AppKey != "" && cfg.AppSecret != "" {
+		return nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("finding config file: %w", err)
+	}
+	path := filepath.Join(home, ".config", "schwab", "config")
+
+	b, err := os.ReadFile(path)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("reading %s: %w", path, err)
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		k, v, _ := strings.Cut(line, "=")
+		switch v = strings.TrimSpace(v); strings.TrimSpace(k) {
+		case "SCHWAB_APP_KEY":
+			cfg.AppKey = cmp.Or(cfg.AppKey, v)
+		case "SCHWAB_APP_SECRET":
+			cfg.AppSecret = cmp.Or(cfg.AppSecret, v)
+		}
+	}
+	if cfg.AppKey != "" && cfg.AppSecret != "" {
+		return nil
+	}
+
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return fmt.Errorf("SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be set in the environment or in %s", path)
+	}
+	// Prompts go to stderr: stdout belongs to the MCP protocol when serving.
+	fmt.Fprintln(os.Stderr, "Schwab app credentials not found (https://developer.schwab.com).")
+	if cfg.AppKey == "" {
+		fmt.Fprint(os.Stderr, "App key: ")
+		if _, err := fmt.Fscanln(os.Stdin, &cfg.AppKey); err != nil {
+			return fmt.Errorf("reading app key: %w", err)
+		}
+	}
+	if cfg.AppSecret == "" {
+		fmt.Fprint(os.Stderr, "App secret (hidden): ")
+		secret, err := term.ReadPassword(fd)
+		fmt.Fprintln(os.Stderr)
+		if err != nil {
+			return fmt.Errorf("reading app secret: %w", err)
+		}
+		cfg.AppSecret = strings.TrimSpace(string(secret))
+	}
+	if cfg.AppKey == "" || cfg.AppSecret == "" {
+		return errors.New("app key and secret must not be empty")
+	}
+
+	data := fmt.Sprintf("SCHWAB_APP_KEY=%s\nSCHWAB_APP_SECRET=%s\n", cfg.AppKey, cfg.AppSecret)
+	if err := writeSecretFile(path, []byte(data)); err != nil {
+		return fmt.Errorf("saving credentials: %w", err)
+	}
+	fmt.Fprintln(os.Stderr, "Saved to", path)
+	return nil
 }
 
 func main() {

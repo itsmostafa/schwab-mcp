@@ -396,3 +396,35 @@ func TestSetupCommands(t *testing.T) {
 		t.Fatalf("got %q\nwant %q", got, want)
 	}
 }
+
+func TestLoadCredentialsFromFile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("SCHWAB_APP_KEY", "env-key")
+	t.Setenv("SCHWAB_APP_SECRET", "")
+	// Stdin may be a terminal when the test binary runs directly; a pipe must not prompt.
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdin := os.Stdin
+	os.Stdin = r
+	t.Cleanup(func() { os.Stdin = stdin; r.Close(); w.Close() })
+
+	// No file and stdin is not a terminal: error, no prompt.
+	if _, err := loadConfig(); err == nil || !strings.Contains(err.Error(), ".config/schwab/config") {
+		t.Fatalf("missing credentials: err = %v", err)
+	}
+
+	path := filepath.Join(home, ".config", "schwab", "config")
+	os.MkdirAll(filepath.Dir(path), 0o700)
+	os.WriteFile(path, []byte("SCHWAB_APP_KEY=file-key\nSCHWAB_APP_SECRET = file-secret \n"), 0o600)
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The environment wins over the file.
+	if cfg.AppKey != "env-key" || cfg.AppSecret != "file-secret" {
+		t.Fatalf("got key %q secret %q", cfg.AppKey, cfg.AppSecret)
+	}
+}

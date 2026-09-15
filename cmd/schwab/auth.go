@@ -330,15 +330,23 @@ func (a *Auth) load() (*token, error) {
 
 // save writes the token atomically with 0600 permissions.
 func (a *Auth) save(t *token) error {
-	dir := filepath.Dir(a.Cfg.TokenFile)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
 	b, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		return err
 	}
-	f, err := os.CreateTemp(dir, ".token-*.json") // CreateTemp uses mode 0600
+	if err := writeSecretFile(a.Cfg.TokenFile, b); err != nil {
+		return fmt.Errorf("save token: %w", err)
+	}
+	return nil
+}
+
+// writeSecretFile atomically replaces path with b, mode 0600 in a 0700 dir.
+func writeSecretFile(path string, b []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	f, err := os.CreateTemp(dir, ".tmp-*") // CreateTemp uses mode 0600
 	if err != nil {
 		return err
 	}
@@ -347,13 +355,12 @@ func (a *Auth) save(t *token) error {
 		err = cerr
 	}
 	if err == nil {
-		err = os.Rename(f.Name(), a.Cfg.TokenFile)
+		err = os.Rename(f.Name(), path)
 	}
 	if err != nil {
 		os.Remove(f.Name())
-		return fmt.Errorf("save token: %w", err)
 	}
-	return nil
+	return err
 }
 
 // lockFile takes the cross-process lock that guards the token file.
