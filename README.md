@@ -42,13 +42,15 @@ curl -fsSL https://raw.githubusercontent.com/itsmostafa/schwab-mcp/main/install.
 **2. Log in** with your Schwab app credentials ([how to get them](#1-create-a-schwab-app)):
 
 ```sh
-SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab login
+schwab login
 ```
+
+It prompts for the App Key and Secret the first time and saves them to `~/.config/schwab/config`.
 
 **3. Add it to Claude Code and Codex** ([other clients below](#5-add-to-your-mcp-client)):
 
 ```sh
-SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab mcp setup
+schwab mcp setup
 ```
 
 Then ask: *"Show my account balances and today's top movers in the S&P 500."*
@@ -91,18 +93,20 @@ This installs `schwab` in `$(go env GOPATH)/bin`.
 
 | Variable | Required | Default |
 |---|---|---|
-| `SCHWAB_APP_KEY` | yes | |
-| `SCHWAB_APP_SECRET` | yes | |
+| `SCHWAB_APP_KEY` | yes | read from `~/.config/schwab/config` |
+| `SCHWAB_APP_SECRET` | yes | read from `~/.config/schwab/config` |
 | `SCHWAB_CALLBACK_URL` | no | `https://127.0.0.1:8182/callback` (must match the app registration exactly) |
 | `SCHWAB_TOKEN_FILE` | no | `<user config dir>/schwab-mcp/token.json` |
 | `SCHWAB_ALLOW_TRADING` | no | unset. Set to `true` to enable `place_order`, `replace_order`, `cancel_order` |
 | `SCHWAB_ALLOW_MARKET_ORDERS` | no | unset. Set to `true` to allow order types without a price cap (`MARKET`, `STOP`, `TRAILING_STOP`, ...) |
 | `SCHWAB_MAX_PRICE_DEVIATION_BPS` | no | `50`. How far, in basis points, a `LIMIT` price may cross the live bid/ask |
 
+`~/.config/schwab/config` holds `SCHWAB_APP_KEY=...` and `SCHWAB_APP_SECRET=...` lines. Environment variables take precedence over it. If either value is missing and the command runs in a terminal, `schwab` prompts for it and saves the file (mode 0600).
+
 ### 4. Log in
 
 ```sh
-SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab login
+schwab login
 ```
 
 Open the printed URL and approve access. Schwab then redirects to `https://127.0.0.1:8182/callback`, which is served by `schwab` with a self-signed certificate, so the browser shows a certificate warning. Click through it (for example "Advanced" then "Proceed"). The token is saved to `SCHWAB_TOKEN_FILE`.
@@ -112,10 +116,10 @@ Schwab refresh tokens last 7 days, so log in again about once a week. From a des
 ### 5. Add to your MCP client
 
 ```sh
-SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab mcp setup
+schwab mcp setup
 ```
 
-This registers the running binary with Claude Code (user scope) and Codex, whichever are on `PATH`, passing along every `SCHWAB_*` variable set in your shell. Re-run it to update the entry, for example after setting `SCHWAB_ALLOW_TRADING=true`. To configure a client by hand, use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
+This registers the running binary with Claude Code (user scope) and Codex, whichever are on `PATH`, passing along every `SCHWAB_*` variable set in your shell. Credentials in `~/.config/schwab/config` are read by the server at launch, so they don't need to be passed. Re-run it to update the entry, for example after setting `SCHWAB_ALLOW_TRADING=true`. To configure a client by hand, use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
 
 Claude Code:
 
