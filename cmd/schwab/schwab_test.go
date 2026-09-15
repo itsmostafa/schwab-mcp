@@ -425,6 +425,15 @@ func TestSetupClaudeDesktop(t *testing.T) {
 	if got.MCPServers["lumi"].Command != "/bin/lumi" || got.Preferences["sidebarMode"] != "chat" {
 		t.Fatalf("other keys lost: %s", b)
 	}
+
+	for _, seed := range []string{`null`, `{"mcpServers":null}`} {
+		if err := os.WriteFile(path, []byte(seed), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := setupClaudeDesktop(path, "/bin/schwab", nil); err != nil {
+			t.Fatalf("seed %s: %v", seed, err)
+		}
+	}
 }
 
 func TestLoadCredentialsFromFile(t *testing.T) {

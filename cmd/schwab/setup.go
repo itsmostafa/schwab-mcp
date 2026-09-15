@@ -111,6 +111,13 @@ func setupClaudeDesktop(path, exe string, env []string) error {
 			return fmt.Errorf("parsing mcpServers in %s: %w", path, err)
 		}
 	}
+	// A JSON null unmarshals to a nil map, which panics on assignment.
+	if cfg == nil {
+		cfg = map[string]json.RawMessage{}
+	}
+	if servers == nil {
+		servers = map[string]json.RawMessage{}
+	}
 
 	entry := struct {
 		Command string            `json:"command"`
