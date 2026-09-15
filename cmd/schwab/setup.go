@@ -114,8 +114,9 @@ func setupClaudeDesktop(path, exe string, env []string) error {
 
 	entry := struct {
 		Command string            `json:"command"`
+		Args    []string          `json:"args"`
 		Env     map[string]string `json:"env,omitempty"`
-	}{Command: exe}
+	}{Command: exe, Args: []string{"mcp"}}
 	for _, kv := range env {
 		k, v, _ := strings.Cut(kv, "=")
 		if entry.Env == nil {
@@ -186,7 +187,7 @@ func setupCommands(exe string, env []string) []setupCommand {
 	}
 	return []setupCommand{
 		// `claude mcp add` refuses an existing name; `codex mcp add` overwrites.
-		{"Claude Code", "claude", []string{"mcp", "remove", "schwab", "-s", "user"}, append(claude, "--", exe)},
-		{"Codex", "codex", nil, append(codex, "--", exe)},
+		{"Claude Code", "claude", []string{"mcp", "remove", "schwab", "-s", "user"}, append(claude, "--", exe, "mcp")},
+		{"Codex", "codex", nil, append(codex, "--", exe, "mcp")},
 	}
 }

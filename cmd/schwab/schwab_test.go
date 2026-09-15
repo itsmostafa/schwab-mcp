@@ -387,9 +387,9 @@ func TestSetupCommands(t *testing.T) {
 	cmds := setupCommands("/bin/schwab", []string{"SCHWAB_APP_KEY=k", "SCHWAB_APP_SECRET=s"})
 	want := [][]string{
 		{"mcp", "remove", "schwab", "-s", "user"},
-		{"mcp", "add", "schwab", "-s", "user", "-e", "SCHWAB_APP_KEY=k", "-e", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+		{"mcp", "add", "schwab", "-s", "user", "-e", "SCHWAB_APP_KEY=k", "-e", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab", "mcp"},
 		nil,
-		{"mcp", "add", "schwab", "--env", "SCHWAB_APP_KEY=k", "--env", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+		{"mcp", "add", "schwab", "--env", "SCHWAB_APP_KEY=k", "--env", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab", "mcp"},
 	}
 	got := [][]string{cmds[0].reset, cmds[0].add, cmds[1].reset, cmds[1].add}
 	if !slices.EqualFunc(got, want, slices.Equal) {
@@ -410,6 +410,7 @@ func TestSetupClaudeDesktop(t *testing.T) {
 	var got struct {
 		MCPServers map[string]struct {
 			Command string            `json:"command"`
+			Args    []string          `json:"args"`
 			Env     map[string]string `json:"env"`
 		} `json:"mcpServers"`
 		Preferences map[string]string `json:"preferences"`
@@ -418,7 +419,7 @@ func TestSetupClaudeDesktop(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := got.MCPServers["schwab"]
-	if s.Command != "/bin/schwab" || s.Env["SCHWAB_ALLOW_TRADING"] != "true" {
+	if s.Command != "/bin/schwab" || !slices.Equal(s.Args, []string{"mcp"}) || s.Env["SCHWAB_ALLOW_TRADING"] != "true" {
 		t.Fatalf("schwab entry = %+v", s)
 	}
 	if got.MCPServers["lumi"].Command != "/bin/lumi" || got.Preferences["sidebarMode"] != "chat" {
