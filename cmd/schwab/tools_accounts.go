@@ -143,6 +143,10 @@ func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config
 				"or set SCHWAB_ALLOW_MARKET_ORDERS=true", o.OrderType)
 		}
 		for _, l := range o.OrderLegCollection {
+			// The price checks pick the quote side by this prefix, so anything else would be misread as a sell.
+			if !strings.HasPrefix(l.Instruction, "BUY") && !strings.HasPrefix(l.Instruction, "SELL") {
+				return fmt.Errorf("order not sent: unsupported instruction %q", l.Instruction)
+			}
 			if !slices.Contains(symbols, l.Instrument.Symbol) {
 				symbols = append(symbols, l.Instrument.Symbol)
 			}
