@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -62,9 +67,157 @@ type replaceIn struct {
 	Order       map[string]any `json:"order" jsonschema:"Complete new Schwab order JSON object (same shape as place_order)"`
 }
 
+// cappedOrderTypes can never fill worse than their limit price. Other types
+// (MARKET, STOP, TRAILING_STOP, ...) fill at whatever the market is when they execute.
+var cappedOrderTypes = []string{"LIMIT", "STOP_LIMIT", "TRAILING_STOP_LIMIT", "LIMIT_ON_CLOSE", "NET_DEBIT", "NET_CREDIT", "NET_ZERO"}
+
+// quoteCheckTimeout bounds the pre-order quote request.
+const quoteCheckTimeout = 5 * time.Second
+
+// liveQuote is the part of a /marketdata/v1/quotes entry the order check reads.
+type liveQuote struct {
+	Realtime *bool `json:"realtime"`
+	Quote    struct {
+		BidPrice  float64 `json:"bidPrice"`
+		AskPrice  float64 `json:"askPrice"`
+		LastPrice float64 `json:"lastPrice"`
+		Mark      float64 `json:"mark"`
+	} `json:"quote"`
+}
+
+// orderShape is the part of a Schwab order the order check reads.
+type orderShape struct {
+	OrderType string `json:"orderType"`
+	// json.Number accepts 100.5 and "100.5" and rejects NaN/Inf strings.
+	Price              json.Number `json:"price"`
+	StopPrice          json.Number `json:"stopPrice"`
+	StopType           string      `json:"stopType"`
+	OrderLegCollection []struct {
+		Instruction string `json:"instruction"`
+		Instrument  struct {
+			Symbol string `json:"symbol"`
+		} `json:"instrument"`
+	} `json:"orderLegCollection"`
+	ChildOrderStrategies []orderShape `json:"childOrderStrategies"`
+}
+
+// checkOrder re-quotes an order's symbols just before it is sent, because the agent
+// built the order from prices that may be minutes old. It rejects uncapped order types
+// (unless cfg.AllowMarketOrders), legs without a real-time quote on the side they trade against,
+// and single-leg LIMIT (or already-triggered STOP_LIMIT) orders that cross the live
+// bid/ask by more than cfg.MaxPriceDeviationBps. Resting limits below the ask (buys)
+// or above the bid (sells) always pass.
+// Children of a TRIGGER order are not checked: Schwab executes them on live prices.
+func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config) error {
+	b, err := json.Marshal(order)
+	if err != nil {
+		return fmt.Errorf("order not sent: %w", err)
+	}
+	var top orderShape
+	if err := json.Unmarshal(b, &top); err != nil {
+		return fmt.Errorf("order not sent: cannot read order: %w", err)
+	}
+	// An OCO wrapper has no orderType of its own; its children are the real orders.
+	orders := []orderShape{top}
+	if top.OrderType == "" && len(top.ChildOrderStrategies) > 0 {
+		orders = top.ChildOrderStrategies
+	}
+
+	var symbols []string
+	for _, o := range orders {
+		if !cfg.AllowMarketOrders && !slices.Contains(cappedOrderTypes, o.OrderType) {
+			return fmt.Errorf("order not sent: orderType %q can fill at any price; use a LIMIT-type order, "+
+				"or set SCHWAB_ALLOW_MARKET_ORDERS=true", o.OrderType)
+		}
+		for _, l := range o.OrderLegCollection {
+			if !slices.Contains(symbols, l.Instrument.Symbol) {
+				symbols = append(symbols, l.Instrument.Symbol)
+			}
+		}
+	}
+	if len(symbols) == 0 || slices.Contains(symbols, "") {
+		return errors.New("order not sent: every order leg needs instrument.symbol")
+	}
+
+	// A slow quote is stale by the time the order goes out.
+	// ponytail: if the token hits its 60s refresh point during this window, the order request
+	// still waits on one OAuth round trip after the check; refresh with a wider skew here if that matters.
+	qctx, cancel := context.WithTimeout(ctx, quoteCheckTimeout)
+	defer cancel()
+	raw, err := c.get(qctx, "/marketdata/v1/quotes", url.Values{"symbols": {strings.Join(symbols, ",")}})
+	if err != nil {
+		return fmt.Errorf("order not sent: live quote check failed: %w", err)
+	}
+	var quotes map[string]liveQuote
+	if err := json.Unmarshal(raw, &quotes); err != nil {
+		return fmt.Errorf("order not sent: live quote check failed: %w", err)
+	}
+
+	tol := float64(cfg.MaxPriceDeviationBps) / 1e4
+	for _, o := range orders {
+		for _, l := range o.OrderLegCollection {
+			sym, buy := l.Instrument.Symbol, strings.HasPrefix(l.Instruction, "BUY")
+			q, ok := quotes[sym]
+			live := fmt.Sprintf("(live %s bid %g, ask %g, last %g)", sym, q.Quote.BidPrice, q.Quote.AskPrice, q.Quote.LastPrice)
+			switch {
+			case !ok:
+				return fmt.Errorf("order not sent: no live quote for %s", sym)
+			case q.Realtime == nil || !*q.Realtime:
+				return fmt.Errorf("order not sent: quote for %s is not real-time %s", sym, live)
+			case buy && q.Quote.AskPrice <= 0:
+				return fmt.Errorf("order not sent: no live ask for %s %s", sym, live)
+			case !buy && q.Quote.BidPrice <= 0:
+				return fmt.Errorf("order not sent: no live bid for %s %s", sym, live)
+			}
+			// Spreads have a net price no single quote maps to, so only single legs get the band check.
+			if len(o.OrderLegCollection) != 1 || o.OrderType != "LIMIT" && o.OrderType != "STOP_LIMIT" {
+				continue
+			}
+			ref := q.Quote.BidPrice
+			if buy {
+				ref = q.Quote.AskPrice
+			}
+			price, perr := o.Price.Float64()
+			stop, serr := o.StopPrice.Float64()
+			if perr != nil || o.OrderType == "STOP_LIMIT" && serr != nil {
+				return fmt.Errorf("order not sent: cannot read price/stopPrice of %s order", o.OrderType)
+			}
+			// A STOP_LIMIT the market has not reached rests until Schwab sees the live price hit its stop.
+			if o.OrderType == "STOP_LIMIT" {
+				// Schwab triggers on the price stopType names. STANDARD (the default) is the last trade
+				// for equities but bid/ask-based elsewhere, so it counts as reached when either is.
+				var basis []float64
+				switch o.StopType {
+				case "", "STANDARD":
+					basis = []float64{q.Quote.LastPrice, ref}
+				case "LAST":
+					basis = []float64{q.Quote.LastPrice}
+				case "BID":
+					basis = []float64{q.Quote.BidPrice}
+				case "ASK":
+					basis = []float64{q.Quote.AskPrice}
+				case "MARK":
+					basis = []float64{q.Quote.Mark}
+				default:
+					return fmt.Errorf("order not sent: unsupported stopType %q", o.StopType)
+				}
+				if !slices.ContainsFunc(basis, func(p float64) bool { return buy && p >= stop || !buy && p <= stop }) {
+					continue
+				}
+			}
+			if buy && price > ref*(1+tol) || !buy && price < ref*(1-tol) {
+				return fmt.Errorf("order not sent: %s %s limit %g crosses the live market by more than %d bps %s; "+
+					"prices moved since the order was built, re-check quotes and rebuild it",
+					l.Instruction, sym, price, cfg.MaxPriceDeviationBps, live)
+			}
+		}
+	}
+	return nil
+}
+
 // registerAccountTools registers account, order, transaction and preference tools.
-// Order-changing tools are registered only when allowTrading is set.
-func registerAccountTools(s *mcp.Server, c *Client, allowTrading bool) {
+// Order-changing tools are registered only when cfg.AllowTrading is set.
+func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
 	// orDefault fills an empty ISO time with now minus ago, in Schwab's millisecond UTC layout.
 	orDefault := func(v string, ago time.Duration) string {
 		if v != "" {
@@ -141,7 +294,7 @@ func registerAccountTools(s *mcp.Server, c *Client, allowTrading bool) {
 			return b, err
 		})
 
-	if !allowTrading {
+	if !cfg.AllowTrading {
 		return
 	}
 
@@ -154,8 +307,12 @@ func registerAccountTools(s *mcp.Server, c *Client, allowTrading bool) {
 	}
 
 	add(s, &mcp.Tool{Name: "place_order", Annotations: destructive(),
-		Description: "Place a live order. Call preview_order with the same order first and confirm with the user. Returns the orderId."},
+		Description: "Place a live order. Call preview_order with the same order first and confirm with the user. " +
+			"The server re-quotes first and rejects stale LIMIT prices, non-real-time quotes and MARKET/STOP orders. Returns the orderId."},
 		func(ctx context.Context, in orderBodyIn) ([]byte, error) {
+			if err := checkOrder(ctx, c, in.Order, cfg); err != nil {
+				return nil, err
+			}
 			_, h, err := c.do(ctx, http.MethodPost, acct(in.AccountHash)+"/orders", nil, in.Order)
 			if err != nil {
 				return nil, err
@@ -164,8 +321,12 @@ func registerAccountTools(s *mcp.Server, c *Client, allowTrading bool) {
 		})
 
 	add(s, &mcp.Tool{Name: "replace_order", Annotations: destructive(),
-		Description: "Replace a working order with a new one (the old order is canceled). Call preview_order with the new order first and confirm with the user. Returns the new orderId."},
+		Description: "Replace a working order with a new one (the old order is canceled). Call preview_order with the new order first and confirm with the user. " +
+			"The server re-quotes first, as for place_order. Returns the new orderId."},
 		func(ctx context.Context, in replaceIn) ([]byte, error) {
+			if err := checkOrder(ctx, c, in.Order, cfg); err != nil {
+				return nil, err
+			}
 			_, h, err := c.do(ctx, http.MethodPut, acct(in.AccountHash)+"/orders/"+url.PathEscape(in.OrderID), nil, in.Order)
 			if err != nil {
 				return nil, err
