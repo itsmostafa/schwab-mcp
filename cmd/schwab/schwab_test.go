@@ -1,6 +1,9 @@
 package main
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -239,5 +242,30 @@ func TestToolRequests(t *testing.T) {
 	defer fake.mu.Unlock()
 	if !slices.Equal(fake.reqs, want) {
 		t.Errorf("requests:\n got %q\nwant %q", fake.reqs, want)
+	}
+}
+
+// A tar member named "schwab" that is a symlink (or any other non-regular entry)
+// must not be extracted and installed over the running binary.
+func TestExtractBinaryRejectsNonRegularMember(t *testing.T) {
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	if err := tw.WriteHeader(&tar.Header{
+		Name:     "schwab",
+		Typeflag: tar.TypeSymlink,
+		Linkname: "/etc/passwd",
+		Mode:     0o777,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, closer := range []func() error{tw.Close, gw.Close} {
+		if err := closer(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := extractBinaryFromTar(buf.Bytes(), "schwab", io.Discard); err == nil || !strings.Contains(err.Error(), "not a regular file") {
+		t.Fatalf("expected non-regular member to be rejected, got %v", err)
 	}
 }

@@ -9,11 +9,23 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// version is set by release builds via -ldflags "-X main.version=...".
+var version = "dev"
+
+func init() {
+	// Without -X, use the version the go tool stamps: the tag for
+	// `go install ...@vX.Y.Z`, a pseudo-version for a local `go build`.
+	if info, ok := debug.ReadBuildInfo(); ok && version == "dev" && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		version = info.Main.Version
+	}
+}
 
 // Config holds settings read from SCHWAB_* environment variables.
 type Config struct {
@@ -56,28 +68,30 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := loadConfig()
-	if err != nil {
-		return err
-	}
-	auth := NewAuth(cfg)
-
 	cmd := "serve"
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
 	switch cmd {
 	case "serve":
-		s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: "0.1.0"}, nil)
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
+		s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: version}, nil)
 		c := &Client{
 			BaseURL: "https://api.schwabapi.com",
-			Auth:    auth,
+			Auth:    NewAuth(cfg),
 			HTTP:    &http.Client{Timeout: 30 * time.Second},
 		}
 		registerTools(s, c, cfg.AllowTrading)
 		return s.Run(ctx, &mcp.StdioTransport{})
 	case "login":
-		authURL, done, err := auth.Login(ctx)
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
+		authURL, done, err := NewAuth(cfg).Login(ctx)
 		if err != nil {
 			return err
 		}
@@ -88,7 +102,12 @@ func run() error {
 		}
 		fmt.Println("Logged in. Token saved to", cfg.TokenFile)
 		return nil
+	case "update":
+		return runUpdate(ctx)
+	case "version", "--version", "-v":
+		fmt.Println(version)
+		return nil
 	default:
-		return fmt.Errorf("unknown command %q (usage: schwab [serve|login])", cmd)
+		return fmt.Errorf("unknown command %q (usage: schwab [serve|login|update|version])", cmd)
 	}
 }
