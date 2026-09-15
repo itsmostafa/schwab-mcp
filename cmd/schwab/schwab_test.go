@@ -269,3 +269,17 @@ func TestExtractBinaryRejectsNonRegularMember(t *testing.T) {
 		t.Fatalf("expected non-regular member to be rejected, got %v", err)
 	}
 }
+
+func TestSetupCommands(t *testing.T) {
+	cmds := setupCommands("/bin/schwab", []string{"SCHWAB_APP_KEY=k", "SCHWAB_APP_SECRET=s"})
+	want := [][]string{
+		{"mcp", "remove", "schwab", "-s", "user"},
+		{"mcp", "add", "schwab", "-s", "user", "-e", "SCHWAB_APP_KEY=k", "-e", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+		nil,
+		{"mcp", "add", "schwab", "--env", "SCHWAB_APP_KEY=k", "--env", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+	}
+	got := [][]string{cmds[0].reset, cmds[0].add, cmds[1].reset, cmds[1].add}
+	if !slices.EqualFunc(got, want, slices.Equal) {
+		t.Fatalf("got %q\nwant %q", got, want)
+	}
+}
