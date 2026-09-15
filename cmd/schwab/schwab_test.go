@@ -193,6 +193,23 @@ func TestTradingToolsGated(t *testing.T) {
 	}
 }
 
+func TestOutcomeUnknownOnlyForMutations(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+	a := NewAuth(Config{TokenFile: filepath.Join(t.TempDir(), "token.json")})
+	a.tok = &token{AccessToken: "tok", ExpiresAt: time.Now().Add(time.Hour)}
+	c := &Client{BaseURL: srv.URL, Auth: a, HTTP: srv.Client()}
+
+	for path, want := range map[string]bool{"/trader/v1/accounts/H1/previewOrder": false, "/trader/v1/accounts/H1/orders": true} {
+		_, _, err := c.do(t.Context(), http.MethodPost, path, nil, map[string]any{})
+		if err == nil || strings.Contains(err.Error(), "outcome unknown") != want {
+			t.Errorf("POST %s: err %v, want outcome unknown = %v", path, err, want)
+		}
+	}
+}
+
 func TestToolRequests(t *testing.T) {
 	fake := &fakeSchwab{location: "https://api.schwabapi.com/trader/v1/accounts/H1/orders/12345"}
 	cs := session(t, fake, true)

@@ -53,7 +53,8 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	mutation := method != http.MethodGet
+	// previewOrder is a POST but cannot change orders, so failures are safe to retry.
+	mutation := method != http.MethodGet && !strings.HasSuffix(path, "/previewOrder")
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		if mutation {
