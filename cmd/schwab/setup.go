@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -38,21 +39,25 @@ func runMCPSetup(ctx context.Context) error {
 	}
 
 	var errs []error
+	fail := func(name string, err error) {
+		fmt.Printf("❌ %s setup failed\n", name)
+		errs = append(errs, fmt.Errorf("%s: %w", name, err))
+	}
 	for _, c := range setupCommands(exe, env) {
 		if _, err := exec.LookPath(c.cli); err != nil {
-			fmt.Printf("%s: skipped, `%s` not on PATH (see README to configure by hand)\n", c.name, c.cli)
+			fmt.Printf("➖ %s not found, skipped (`%s` not on PATH; see README to configure by hand)\n", c.name, c.cli)
 			continue
 		}
+		fmt.Printf("🔎 %s detected\n", c.name)
 		var prev []byte
 		if c.reset != nil {
 			prev = claudeUserEntry()
 			// Fails when there is no entry yet; nothing to report either way.
 			exec.CommandContext(ctx, c.cli, c.reset...).Run()
 		}
-		cmd := exec.CommandContext(ctx, c.cli, c.add...)
-		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			errs = append(errs, fmt.Errorf("%s: %w", c.name, err))
+		// Captured so the CLIs' own chatter stays out of the list; shown on failure.
+		if out, err := exec.CommandContext(ctx, c.cli, c.add...).CombinedOutput(); err != nil {
+			fail(c.name, fmt.Errorf("%w\n%s", err, bytes.TrimSpace(out)))
 			if prev != nil {
 				// Not ctx: an interrupted add must still put the old entry back.
 				if err := exec.Command(c.cli, "mcp", "add-json", "schwab", string(prev), "-s", "user").Run(); err != nil {
@@ -63,16 +68,28 @@ func runMCPSetup(ctx context.Context) error {
 	}
 
 	// Claude Desktop has no CLI; edit its config file if the app is installed.
+	desktop := false
 	if dir, err := os.UserConfigDir(); err == nil {
 		if _, err := os.Stat(filepath.Join(dir, "Claude")); err != nil {
-			fmt.Println("Claude Desktop: skipped, not installed (see README to configure by hand)")
-		} else if err := setupClaudeDesktop(filepath.Join(dir, "Claude", "claude_desktop_config.json"), exe, env); err != nil {
-			errs = append(errs, fmt.Errorf("Claude Desktop: %w", err))
+			fmt.Println("➖ Claude Desktop not found, skipped (see README to configure by hand)")
 		} else {
-			fmt.Println("Claude Desktop: added schwab; restart the app to load it")
+			fmt.Println("🔎 Claude Desktop detected")
+			if err := setupClaudeDesktop(filepath.Join(dir, "Claude", "claude_desktop_config.json"), exe, env); err != nil {
+				fail("Claude Desktop", err)
+			} else {
+				desktop = true
+			}
 		}
 	}
-	return errors.Join(errs...)
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	fmt.Println("\n✅ Setup complete!")
+	if desktop {
+		fmt.Println("Restart Claude Desktop to load the schwab server.")
+	}
+	return nil
 }
 
 // setupClaudeDesktop sets the schwab entry in Claude Desktop's config at path,
