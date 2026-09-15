@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.1](https://github.com/itsmostafa/schwab-mcp/compare/v0.2.0...v0.2.1) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli:** `schwab` no longer starts the MCP server and `schwab serve` is removed. Re-run `schwab mcp setup`, or add `mcp` to the args of manually configured clients.
+
+### Features
+
+* **cli:** run the MCP server with `schwab mcp` ([ca3a500](https://github.com/itsmostafa/schwab-mcp/commit/ca3a500583c917d8588040082942d0ab731828b4))
+* **setup:** register schwab with Claude Desktop ([17e6ee9](https://github.com/itsmostafa/schwab-mcp/commit/17e6ee9828a61d5bee49d94e6c931afec485cb40))
+* **setup:** register schwab with Claude Desktop ([baef53c](https://github.com/itsmostafa/schwab-mcp/commit/baef53c84b3a2ef11bcc2ceaadc83a42e3a94639))
+* **setup:** show detected clients and a completion message ([add5f39](https://github.com/itsmostafa/schwab-mcp/commit/add5f396b58dd7fbcf629011330980fc261ce63d))
+
+
+### Bug Fixes
+
+* **setup:** handle null Claude Desktop config ([b1687e9](https://github.com/itsmostafa/schwab-mcp/commit/b1687e94d97524f48b500166ac22b499a0efe9b7))
+
+
+### Miscellaneous Chores
+
+* release 0.2.1 ([a3f4d2f](https://github.com/itsmostafa/schwab-mcp/commit/a3f4d2f7b086f6f5532119bf4b2f329b4dc7dc46))
+
 ## [0.2.0](https://github.com/itsmostafa/schwab-mcp/compare/v0.1.0...v0.2.0) (2026-09-15)
 
 
