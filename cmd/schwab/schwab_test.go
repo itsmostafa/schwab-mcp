@@ -387,13 +387,52 @@ func TestSetupCommands(t *testing.T) {
 	cmds := setupCommands("/bin/schwab", []string{"SCHWAB_APP_KEY=k", "SCHWAB_APP_SECRET=s"})
 	want := [][]string{
 		{"mcp", "remove", "schwab", "-s", "user"},
-		{"mcp", "add", "schwab", "-s", "user", "-e", "SCHWAB_APP_KEY=k", "-e", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+		{"mcp", "add", "schwab", "-s", "user", "-e", "SCHWAB_APP_KEY=k", "-e", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab", "mcp"},
 		nil,
-		{"mcp", "add", "schwab", "--env", "SCHWAB_APP_KEY=k", "--env", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab"},
+		{"mcp", "add", "schwab", "--env", "SCHWAB_APP_KEY=k", "--env", "SCHWAB_APP_SECRET=s", "--", "/bin/schwab", "mcp"},
 	}
 	got := [][]string{cmds[0].reset, cmds[0].add, cmds[1].reset, cmds[1].add}
 	if !slices.EqualFunc(got, want, slices.Equal) {
 		t.Fatalf("got %q\nwant %q", got, want)
+	}
+}
+
+func TestSetupClaudeDesktop(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "claude_desktop_config.json")
+	seed := `{"mcpServers":{"lumi":{"command":"/bin/lumi"},"schwab":{"command":"/old"}},"preferences":{"sidebarMode":"chat"}}`
+	if err := os.WriteFile(path, []byte(seed), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := setupClaudeDesktop(path, "/bin/schwab", []string{"SCHWAB_ALLOW_TRADING=true"}); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(path)
+	var got struct {
+		MCPServers map[string]struct {
+			Command string            `json:"command"`
+			Args    []string          `json:"args"`
+			Env     map[string]string `json:"env"`
+		} `json:"mcpServers"`
+		Preferences map[string]string `json:"preferences"`
+	}
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+	s := got.MCPServers["schwab"]
+	if s.Command != "/bin/schwab" || !slices.Equal(s.Args, []string{"mcp"}) || s.Env["SCHWAB_ALLOW_TRADING"] != "true" {
+		t.Fatalf("schwab entry = %+v", s)
+	}
+	if got.MCPServers["lumi"].Command != "/bin/lumi" || got.Preferences["sidebarMode"] != "chat" {
+		t.Fatalf("other keys lost: %s", b)
+	}
+
+	for _, seed := range []string{`null`, `{"mcpServers":null}`} {
+		if err := os.WriteFile(path, []byte(seed), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := setupClaudeDesktop(path, "/bin/schwab", nil); err != nil {
+			t.Fatalf("seed %s: %v", seed, err)
+		}
 	}
 }
 

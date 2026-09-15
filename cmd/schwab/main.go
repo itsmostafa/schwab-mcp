@@ -158,24 +158,22 @@ func newRootCmd() *cobra.Command {
 	}
 	root := &cobra.Command{
 		Use:     "schwab",
-		Short:   "MCP stdio server for the Schwab Trader API (serves when run without a command)",
+		Short:   "CLI and MCP server for the Schwab Trader API",
 		Version: version,
 		// Stdout carries the MCP protocol; main reports errors on stderr.
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		RunE:          run(serve),
 	}
 	root.SetVersionTemplate("{{.Version}}\n")
 
-	mcpCmd := &cobra.Command{Use: "mcp", Short: "Manage MCP client configuration"}
+	mcpCmd := &cobra.Command{Use: "mcp", Short: "Run the MCP server over stdio", Args: cobra.NoArgs, RunE: run(serve)}
 	mcpCmd.AddCommand(&cobra.Command{
 		Use:   "setup",
-		Short: "Register this binary with Claude Code and Codex",
+		Short: "Register this binary with Claude Code, Claude Desktop, and Codex",
 		Args:  cobra.NoArgs,
 		RunE:  run(runMCPSetup),
 	})
 	root.AddCommand(
-		&cobra.Command{Use: "serve", Short: "Run the MCP server over stdio", Args: cobra.NoArgs, RunE: run(serve)},
 		&cobra.Command{Use: "login", Short: "Authorize with Schwab and save the token", Args: cobra.NoArgs, RunE: run(login)},
 		&cobra.Command{Use: "update", Short: "Replace this binary with the latest release", Args: cobra.NoArgs, RunE: run(runUpdate)},
 		&cobra.Command{Use: "version", Short: "Print the version", Args: cobra.NoArgs, Run: func(*cobra.Command, []string) {
