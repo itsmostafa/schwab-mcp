@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/spf13/cobra"
 )
 
 // version is set by release builds via -ldflags "-X main.version=...".
@@ -72,61 +73,79 @@ func loadConfig() (Config, error) {
 }
 
 func main() {
-	if err := run(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	err := newRootCmd().ExecuteContext(ctx)
+	stop()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "schwab:", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+func newRootCmd() *cobra.Command {
+	// Wraps ctx-only funcs as RunE.
+	run := func(f func(context.Context) error) func(*cobra.Command, []string) error {
+		return func(cmd *cobra.Command, _ []string) error { return f(cmd.Context()) }
+	}
+	root := &cobra.Command{
+		Use:     "schwab",
+		Short:   "MCP stdio server for the Schwab Trader API (serves when run without a command)",
+		Version: version,
+		// Stdout carries the MCP protocol; main reports errors on stderr.
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          run(serve),
+	}
+	root.SetVersionTemplate("{{.Version}}\n")
 
-	cmd := "serve"
-	if len(os.Args) > 1 {
-		cmd = os.Args[1]
+	mcpCmd := &cobra.Command{Use: "mcp", Short: "Manage MCP client configuration"}
+	mcpCmd.AddCommand(&cobra.Command{
+		Use:   "setup",
+		Short: "Register this binary with Claude Code and Codex",
+		Args:  cobra.NoArgs,
+		RunE:  run(runMCPSetup),
+	})
+	root.AddCommand(
+		&cobra.Command{Use: "serve", Short: "Run the MCP server over stdio", Args: cobra.NoArgs, RunE: run(serve)},
+		&cobra.Command{Use: "login", Short: "Authorize with Schwab and save the token", Args: cobra.NoArgs, RunE: run(login)},
+		&cobra.Command{Use: "update", Short: "Replace this binary with the latest release", Args: cobra.NoArgs, RunE: run(runUpdate)},
+		&cobra.Command{Use: "version", Short: "Print the version", Args: cobra.NoArgs, Run: func(*cobra.Command, []string) {
+			fmt.Println(version)
+		}},
+		mcpCmd,
+	)
+	return root
+}
+
+func serve(ctx context.Context) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
 	}
-	switch cmd {
-	case "serve":
-		cfg, err := loadConfig()
-		if err != nil {
-			return err
-		}
-		s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: version}, nil)
-		c := &Client{
-			BaseURL: "https://api.schwabapi.com",
-			Auth:    NewAuth(cfg),
-			HTTP:    &http.Client{Timeout: 30 * time.Second},
-		}
-		registerTools(s, c, cfg)
-		return s.Run(ctx, &mcp.StdioTransport{})
-	case "login":
-		cfg, err := loadConfig()
-		if err != nil {
-			return err
-		}
-		authURL, done, err := NewAuth(cfg).Login(ctx)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Open this URL and approve access (accept the self-signed certificate warning):")
-		fmt.Println(authURL)
-		if err := <-done; err != nil {
-			return err
-		}
-		fmt.Println("Logged in. Token saved to", cfg.TokenFile)
-		return nil
-	case "update":
-		return runUpdate(ctx)
-	case "mcp":
-		if len(os.Args) != 3 || os.Args[2] != "setup" {
-			return errors.New("usage: schwab mcp setup")
-		}
-		return runMCPSetup(ctx)
-	case "version", "--version", "-v":
-		fmt.Println(version)
-		return nil
-	default:
-		return fmt.Errorf("unknown command %q (usage: schwab [serve|login|mcp setup|update|version])", cmd)
+	s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: version}, nil)
+	c := &Client{
+		BaseURL: "https://api.schwabapi.com",
+		Auth:    NewAuth(cfg),
+		HTTP:    &http.Client{Timeout: 30 * time.Second},
 	}
+	registerTools(s, c, cfg)
+	return s.Run(ctx, &mcp.StdioTransport{})
+}
+
+func login(ctx context.Context) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+	authURL, done, err := NewAuth(cfg).Login(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Open this URL and approve access (accept the self-signed certificate warning):")
+	fmt.Println(authURL)
+	if err := <-done; err != nil {
+		return err
+	}
+	fmt.Println("Logged in. Token saved to", cfg.TokenFile)
+	return nil
 }
