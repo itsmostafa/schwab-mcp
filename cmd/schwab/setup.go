@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -41,7 +43,9 @@ func runMCPSetup(ctx context.Context) error {
 			fmt.Printf("%s: skipped, `%s` not on PATH (see README to configure by hand)\n", c.name, c.cli)
 			continue
 		}
+		var prev []byte
 		if c.reset != nil {
+			prev = claudeUserEntry()
 			// Fails when there is no entry yet; nothing to report either way.
 			exec.CommandContext(ctx, c.cli, c.reset...).Run()
 		}
@@ -49,9 +53,35 @@ func runMCPSetup(ctx context.Context) error {
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", c.name, err))
+			if prev != nil {
+				// Not ctx: an interrupted add must still put the old entry back.
+				if err := exec.Command(c.cli, "mcp", "add-json", "schwab", string(prev), "-s", "user").Run(); err != nil {
+					errs = append(errs, fmt.Errorf("%s: restoring previous entry: %w", c.name, err))
+				}
+			}
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// claudeUserEntry returns Claude Code's current user-scope schwab entry, or nil
+// if there is none or the config cannot be read.
+func claudeUserEntry() []byte {
+	dir := os.Getenv("CLAUDE_CONFIG_DIR")
+	if dir == "" {
+		dir, _ = os.UserHomeDir()
+	}
+	b, err := os.ReadFile(filepath.Join(dir, ".claude.json"))
+	if err != nil {
+		return nil
+	}
+	var cfg struct {
+		MCPServers map[string]json.RawMessage `json:"mcpServers"`
+	}
+	if json.Unmarshal(b, &cfg) != nil {
+		return nil
+	}
+	return cfg.MCPServers["schwab"]
 }
 
 type setupCommand struct {
