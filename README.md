@@ -45,10 +45,10 @@ curl -fsSL https://raw.githubusercontent.com/itsmostafa/schwab-mcp/main/install.
 SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab login
 ```
 
-**3. Add it to your agent** (Claude Code shown; [other clients below](#5-add-to-your-mcp-client)):
+**3. Add it to Claude Code and Codex** ([other clients below](#5-add-to-your-mcp-client)):
 
 ```sh
-claude mcp add schwab -e SCHWAB_APP_KEY=... -e SCHWAB_APP_SECRET=... -- ~/.local/bin/schwab
+SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab mcp setup
 ```
 
 Then ask: *"Show my account balances and today's top movers in the S&P 500."*
@@ -109,7 +109,11 @@ Schwab refresh tokens last 7 days, so log in again about once a week. From a des
 
 ### 5. Add to your MCP client
 
-Use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
+```sh
+SCHWAB_APP_KEY=... SCHWAB_APP_SECRET=... schwab mcp setup
+```
+
+This registers the running binary with Claude Code (user scope) and Codex, whichever are on `PATH`, passing along every `SCHWAB_*` variable set in your shell. Re-run it to update the entry, for example after setting `SCHWAB_ALLOW_TRADING=true`. To configure a client by hand, use the absolute path to the binary (`~/.local/bin/schwab` from the install script, `~/go/bin/schwab` from `go install`); desktop apps often do not have these directories on `PATH`.
 
 Claude Code:
 

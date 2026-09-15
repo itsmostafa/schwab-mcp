@@ -104,10 +104,15 @@ func run() error {
 		return nil
 	case "update":
 		return runUpdate(ctx)
+	case "mcp":
+		if len(os.Args) != 3 || os.Args[2] != "setup" {
+			return errors.New("usage: schwab mcp setup")
+		}
+		return runMCPSetup(ctx)
 	case "version", "--version", "-v":
 		fmt.Println(version)
 		return nil
 	default:
-		return fmt.Errorf("unknown command %q (usage: schwab [serve|login|update|version])", cmd)
+		return fmt.Errorf("unknown command %q (usage: schwab [serve|login|mcp setup|update|version])", cmd)
 	}
 }
