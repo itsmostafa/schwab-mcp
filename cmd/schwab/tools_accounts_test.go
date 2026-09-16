@@ -81,6 +81,13 @@ func TestTransactionsChunking(t *testing.T) {
 		t.Errorf("default range made %d requests, result %s", n, text)
 	}
 
+	// Exactly 20 calendar years is allowed: leap days make it 7305 days, not 20*365.
+	if _, isErr := callResult(t, cs, "get_transactions", map[string]any{"accountHash": "H1",
+		"startDate": "2006-09-16T00:00:00Z", "endDate": "2026-09-16T00:00:00Z"}); isErr {
+		t.Error("exactly 20 years rejected")
+	}
+	reqs()
+
 	// Unparseable dates and ranges over 20 years fail before any Schwab call.
 	for _, dates := range [][2]string{{"2023-01-01", "2024-01-01T00:00:00Z"}, {"1900-01-01T00:00:00Z", "2025-01-01T00:00:00Z"}} {
 		if text, isErr := callResult(t, cs, "get_transactions", map[string]any{"accountHash": "H1",
@@ -92,5 +99,41 @@ func TestTransactionsChunking(t *testing.T) {
 	// go-sdk rejects a string for the array-typed types field before the handler runs.
 	if text, isErr := callResult(t, cs, "get_transactions", map[string]any{"accountHash": "H1", "types": `["TRADE"]`}); !isErr || !strings.Contains(text, "validating") {
 		t.Errorf("string types: isErr %v, text %q", isErr, text)
+	}
+}
+
+// A dense multi-year account must not be merged into memory without a bound.
+func TestTransactionsRowCap(t *testing.T) {
+	full := make([]string, 3000)
+	for i := range full {
+		full[i] = fmt.Sprintf(`{"activityId":%d}`, i)
+	}
+	body := "[" + strings.Join(full, ",") + "]"
+	var mu sync.Mutex
+	n := 0
+	cs := session(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		n++
+		mu.Unlock()
+		w.Write([]byte(body))
+	}), Config{})
+
+	got := call(t, cs, "get_transactions", map[string]any{"accountHash": "H1",
+		"startDate": "2010-01-01T00:00:00Z", "endDate": "2026-01-01T00:00:00Z"})
+	warning, rest, _ := strings.Cut(got, "\n")
+	var rows []map[string]any
+	if err := json.Unmarshal([]byte(rest), &rows); err != nil {
+		t.Fatalf("result: %v", err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	// 16 years is 17 windows; the cap stops the walk on the window that crosses it.
+	wantReq := maxTransactions/3000 + 1
+	if n != wantReq || len(rows) != wantReq*3000 {
+		t.Errorf("requests %d, rows %d, want %d and %d", n, len(rows), wantReq, wantReq*3000)
+	}
+	if !strings.Contains(warning, "3000-transaction cap") ||
+		!strings.Contains(warning, fmt.Sprintf("stopped at %d transactions", wantReq*3000)) {
+		t.Errorf("warning = %q", warning)
 	}
 }

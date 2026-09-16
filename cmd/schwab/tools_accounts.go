@@ -15,6 +15,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// maxTransactions bounds the merged result of a multi-window get_transactions call:
+// at roughly 1 KB per transaction, a 20-year range could otherwise hold ~70 MB in memory.
+const maxTransactions = 20000
+
 // allTransactionTypes is sent when get_transactions is called without types.
 var allTransactionTypes = []string{
 	"TRADE", "RECEIVE_AND_DELIVER", "DIVIDEND_OR_INTEREST", "ACH_RECEIPT", "ACH_DISBURSEMENT",
@@ -337,13 +341,13 @@ func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
 				return nil, fmt.Errorf("startDate and endDate must be ISO-8601 like 2024-01-31T00:00:00.000Z: %w", errors.Join(serr, eerr))
 			}
 			// Each window is one Schwab call; keep long or mistyped ranges well under the 120 requests/min limit.
-			if end.Sub(start) > 20*365*24*time.Hour {
+			if end.After(start.AddDate(20, 0, 0)) {
 				return nil, fmt.Errorf("date range %s to %s is longer than 20 years", in.StartDate, in.EndDate)
 			}
 			// Schwab caps a request at 1 year and 3000 rows, so walk back in ≤364-day windows, newest first.
 			// ponytail: windows are fetched sequentially; parallelize if long ranges get slow (Schwab allows 120 requests/min).
 			all := []map[string]any{}
-			capped := false
+			var warn []string
 			for e := end; ; {
 				s := e.Add(-364 * 24 * time.Hour)
 				if s.Before(start) {
@@ -360,19 +364,28 @@ func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
 				if err := decodeNumbers(b, &rows); err != nil {
 					return nil, fmt.Errorf("transactions %s to %s: %w", w.StartDate, w.EndDate, err)
 				}
-				capped = capped || len(rows) == 3000
+				if len(rows) == 3000 && len(warn) == 0 {
+					warn = append(warn, "a window hit Schwab's 3000-transaction cap; results may be truncated")
+				}
 				for _, tx := range rows {
 					dropZeroFees(tx)
 				}
 				all = append(all, rows...)
+				// The whole merged list is held in memory, so stop before a dense multi-year
+				// account can grow it past what the caller could read anyway.
+				if len(all) >= maxTransactions {
+					warn = append(warn, fmt.Sprintf("stopped at %d transactions, back to %s; request an earlier range for the rest",
+						len(all), w.StartDate))
+					break
+				}
 				if !s.After(start) {
 					break
 				}
 				e = s.Add(-time.Millisecond)
 			}
 			b, err := encodeJSON(all)
-			if capped {
-				b = append([]byte("WARNING: a window hit Schwab's 3000-transaction cap; results may be truncated, narrow the date range.\n"), b...)
+			if len(warn) > 0 {
+				b = append([]byte("WARNING: "+strings.Join(warn, "; ")+".\n"), b...)
 			}
 			return b, err
 		})

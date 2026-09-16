@@ -476,13 +476,26 @@ func TestErrorsRedactAccountHash(t *testing.T) {
 
 	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"message":"Invalid account","errors":["accountHash not found"]}`))
+		// Schwab may quote the request back, so the body is scrubbed too, not just the path.
+		w.Write([]byte(`{"message":"Invalid account SECRETHASH","errors":["hash SECRETHASH not found"]}`))
 	}))
 	defer bad.Close()
 	c := &Client{BaseURL: bad.URL, Auth: a, HTTP: bad.Client()}
 	_, err := c.get(t.Context(), "/trader/v1/accounts/SECRETHASH/transactions", nil)
-	if err == nil || strings.Contains(err.Error(), "SECRETHASH") || !strings.Contains(err.Error(), "HTTP 400: Invalid account: accountHash not found") {
+	if err == nil || strings.Contains(err.Error(), "SECRETHASH") ||
+		!strings.Contains(err.Error(), "HTTP 400: Invalid account {accountHash}: hash {accountHash} not found") {
 		t.Errorf("400: err %v", err)
+	}
+
+	// A body that is not Schwab's {message, errors} shape is scrubbed as well.
+	raw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "gateway rejected /trader/v1/accounts/SECRETHASH/transactions", http.StatusBadGateway)
+	}))
+	defer raw.Close()
+	c = &Client{BaseURL: raw.URL, Auth: a, HTTP: raw.Client()}
+	if _, err := c.get(t.Context(), "/trader/v1/accounts/SECRETHASH/transactions", nil); err == nil ||
+		strings.Contains(err.Error(), "SECRETHASH") {
+		t.Errorf("raw body: err %v", err)
 	}
 
 	hang := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
