@@ -189,7 +189,9 @@ func serve(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: version}, nil)
+	s := mcp.NewServer(&mcp.Implementation{Name: "schwab", Version: version}, &mcp.ServerOptions{
+		Instructions: "Account tools take accountHash: call get_account_numbers first to get each account's hashValue.",
+	})
 	c := &Client{
 		BaseURL: "https://api.schwabapi.com",
 		Auth:    NewAuth(cfg),
