@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.3](https://github.com/itsmostafa/schwab-mcp/compare/v0.2.1...v0.2.3) (2026-09-16)
+
+
+### Features
+
+* **mcp:** tell clients to call get_account_numbers first ([a3e1127](https://github.com/itsmostafa/schwab-mcp/commit/a3e1127110af7859a9b20b00badfca592edf50f2))
+* **transactions:** split long date ranges, trim payloads, and stop leaking account hashes ([578b6d5](https://github.com/itsmostafa/schwab-mcp/commit/578b6d52ab894cf2aedec7502e22cccaa739ab36))
+* **transactions:** split ranges over a year and drop zero-value fees ([5e541c0](https://github.com/itsmostafa/schwab-mcp/commit/5e541c09c7c0e417d7e03197a832d047448c497c))
+
+
+### Bug Fixes
+
+* **client:** keep account hashes out of tool errors ([310b630](https://github.com/itsmostafa/schwab-mcp/commit/310b630dc9c98dd9f4c47fea5409bd74726a823a))
+* **orders:** reject legs whose instruction is not a buy or sell ([b6e9e06](https://github.com/itsmostafa/schwab-mcp/commit/b6e9e0699a7e320dec84f6eef6530e363c845903))
+* **orders:** reject legs whose instruction is not a buy or sell ([4e5a0f4](https://github.com/itsmostafa/schwab-mcp/commit/4e5a0f48220480a324748e69c3fb3605061a9d71))
+* **transactions:** bound merged results and measure the range in calendar years ([cdc1598](https://github.com/itsmostafa/schwab-mcp/commit/cdc15980ca99feba90c768c19b0df2664c6c43cf))
+
+
+### Miscellaneous Chores
+
+* release 0.2.3 ([aee4dc1](https://github.com/itsmostafa/schwab-mcp/commit/aee4dc10fc54d30a7d426878740f5f2d96bf4774))
+
 ## [0.2.1](https://github.com/itsmostafa/schwab-mcp/compare/v0.2.0...v0.2.1) (2026-09-15)
 
 
