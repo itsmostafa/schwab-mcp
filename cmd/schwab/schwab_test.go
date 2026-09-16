@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -465,5 +466,46 @@ func TestLoadCredentialsFromFile(t *testing.T) {
 	// The environment wins over the file.
 	if cfg.AppKey != "env-key" || cfg.AppSecret != "file-secret" {
 		t.Fatalf("got key %q secret %q", cfg.AppKey, cfg.AppSecret)
+	}
+}
+
+// Errors reach the model verbatim, so they must not carry the account hash.
+func TestErrorsRedactAccountHash(t *testing.T) {
+	a := NewAuth(Config{TokenFile: filepath.Join(t.TempDir(), "token.json")})
+	a.tok = &token{AccessToken: "tok", ExpiresAt: time.Now().Add(time.Hour)}
+
+	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"Invalid account","errors":["accountHash not found"]}`))
+	}))
+	defer bad.Close()
+	c := &Client{BaseURL: bad.URL, Auth: a, HTTP: bad.Client()}
+	_, err := c.get(t.Context(), "/trader/v1/accounts/SECRETHASH/transactions", nil)
+	if err == nil || strings.Contains(err.Error(), "SECRETHASH") || !strings.Contains(err.Error(), "HTTP 400: Invalid account: accountHash not found") {
+		t.Errorf("400: err %v", err)
+	}
+
+	hang := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if conn, _, err := w.(http.Hijacker).Hijack(); err == nil {
+			conn.Close()
+		}
+	}))
+	defer hang.Close()
+	c = &Client{BaseURL: hang.URL, Auth: a, HTTP: hang.Client()}
+	for _, tc := range []struct {
+		method, path string
+		unknown      bool
+	}{
+		{http.MethodGet, "/trader/v1/accounts/SECRETHASH/transactions", false},
+		{http.MethodPost, "/trader/v1/accounts/SECRETHASH/orders", true},
+	} {
+		var body any
+		if tc.method == http.MethodPost {
+			body = map[string]any{}
+		}
+		_, _, err := c.do(t.Context(), tc.method, tc.path, url.Values{"startDate": {"x"}}, body)
+		if err == nil || strings.Contains(err.Error(), "SECRETHASH") || strings.Contains(err.Error(), "outcome unknown") != tc.unknown {
+			t.Errorf("%s %s: err %v", tc.method, tc.path, err)
+		}
 	}
 }
