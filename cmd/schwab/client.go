@@ -55,12 +55,18 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 
 	// previewOrder is a POST but cannot change orders, so failures are safe to retry.
 	mutation := method != http.MethodGet && !strings.HasSuffix(path, "/previewOrder")
+	// Errors reach the model verbatim, so they must not carry the account hash.
+	rp, hash := redactPath(path)
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
-		if mutation {
-			return nil, nil, fmt.Errorf("%s %s: outcome unknown (%w); check get_orders before retrying", method, path, err)
+		// *url.Error repeats the full URL, hash and query included.
+		if ue, ok := err.(*url.Error); ok {
+			err = ue.Err
 		}
-		return nil, nil, err
+		if mutation {
+			return nil, nil, fmt.Errorf("%s %s: outcome unknown (%w); check get_orders before retrying", method, rp, err)
+		}
+		return nil, nil, fmt.Errorf("%s %s: %w", method, rp, err)
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
@@ -72,20 +78,55 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 		if mutation && resp.StatusCode == http.StatusCreated {
 			return nil, resp.Header, nil
 		}
-		err = fmt.Errorf("%s %s: HTTP %d: reading body: %w", method, path, resp.StatusCode, err)
+		err = fmt.Errorf("%s %s: HTTP %d: reading body: %w", method, rp, resp.StatusCode, err)
 		if mutation {
 			err = fmt.Errorf("%w; outcome unknown, check get_orders before retrying", err)
 		}
 		return nil, resp.Header, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		err := fmt.Errorf("%s %s: HTTP %d: %s", method, path, resp.StatusCode, data)
+		err := fmt.Errorf("%s %s: HTTP %d: %s", method, rp, resp.StatusCode, errorText(data, hash))
 		if mutation && resp.StatusCode >= 500 {
 			err = fmt.Errorf("%w; outcome unknown, check get_orders before retrying", err)
 		}
 		return nil, resp.Header, err
 	}
 	return data, resp.Header, nil
+}
+
+// redactPath replaces the account hash in a /trader/v1/accounts/{hash}/... path,
+// and returns the hash so response bodies can be scrubbed of it too.
+func redactPath(p string) (string, string) {
+	const prefix = "/trader/v1/accounts/"
+	rest, ok := strings.CutPrefix(p, prefix)
+	if !ok || rest == "" || rest == "accountNumbers" {
+		return p, ""
+	}
+	hash, tail, found := strings.Cut(rest, "/")
+	if found {
+		tail = "/" + tail
+	}
+	return prefix + "{accountHash}" + tail, hash
+}
+
+// errorText formats Schwab's {message, errors} body as "message: e1; e2", else returns it raw.
+// Either form can quote the request, so the account hash is removed from the result.
+func errorText(data []byte, hash string) string {
+	var e struct {
+		Message string   `json:"message"`
+		Errors  []string `json:"errors"`
+	}
+	text := string(data)
+	if json.Unmarshal(data, &e) == nil && e.Message != "" {
+		text = e.Message
+		if len(e.Errors) > 0 {
+			text += ": " + strings.Join(e.Errors, "; ")
+		}
+	}
+	if hash == "" {
+		return text
+	}
+	return strings.ReplaceAll(text, hash, "{accountHash}")
 }
 
 // get sends a GET request and returns the response body.

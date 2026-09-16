@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,10 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// maxTransactions bounds the merged result of a multi-window get_transactions call:
+// at roughly 1 KB per transaction, a 20-year range could otherwise hold ~70 MB in memory.
+const maxTransactions = 20000
 
 // allTransactionTypes is sent when get_transactions is called without types.
 var allTransactionTypes = []string{
@@ -235,6 +240,41 @@ func checkOrder(ctx context.Context, c *Client, order map[string]any, cfg Config
 	return nil
 }
 
+// decodeNumbers unmarshals JSON keeping numbers as json.Number, so re-encoding keeps Schwab's digits.
+func decodeNumbers(b []byte, v any) error {
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.UseNumber()
+	return dec.Decode(v)
+}
+
+// encodeJSON marshals v without HTML-escaping, so text like "AT&T" reaches the model unchanged.
+func encodeJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(v)
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), err
+}
+
+// dropZeroFees removes transferItems fee entries whose amount and cost are both zero;
+// Schwab lists every fee type on every transaction.
+func dropZeroFees(tx map[string]any) {
+	items, ok := tx["transferItems"].([]any)
+	if !ok {
+		return
+	}
+	zero := func(v any) bool {
+		n, ok := v.(json.Number)
+		f, err := n.Float64()
+		return ok && err == nil && f == 0
+	}
+	tx["transferItems"] = slices.DeleteFunc(items, func(it any) bool {
+		m, ok := it.(map[string]any)
+		_, fee := m["feeType"]
+		return ok && fee && zero(m["amount"]) && zero(m["cost"])
+	})
+}
+
 // registerAccountTools registers account, order, transaction and preference tools.
 // Order-changing tools are registered only when cfg.AllowTrading is set.
 func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
@@ -249,19 +289,22 @@ func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
 	const month = 30 * 24 * time.Hour
 
 	add(s, &mcp.Tool{Name: "get_account_numbers", Annotations: readOnly(),
-		Description: "List plain account numbers and their encrypted hashValue. Other account tools take the hashValue."},
+		Description: "List plain account numbers and their encrypted hashValue. Call first: returns the hashValue that " +
+			"get_account, get_orders, get_transactions and other account/positions/balances tools require."},
 		func(ctx context.Context, _ struct{}) ([]byte, error) {
 			return c.get(ctx, "/trader/v1/accounts/accountNumbers", nil)
 		})
 
 	add(s, &mcp.Tool{Name: "get_accounts", Annotations: readOnly(),
-		Description: "Get balances (and optionally positions) for all linked accounts."},
+		Description: "Get balances (and optionally positions) for all linked accounts. " +
+			"Position averagePrice/averageLongPrice/taxLotAverageLongPrice are undocumented by Schwab; do not treat them as tax basis."},
 		func(ctx context.Context, in accountsIn) ([]byte, error) {
 			return c.get(ctx, "/trader/v1/accounts", toQuery(in))
 		})
 
 	add(s, &mcp.Tool{Name: "get_account", Annotations: readOnly(),
-		Description: "Get balances (and optionally positions) for one account."},
+		Description: "Get balances (and optionally positions) for one account. " +
+			"Position averagePrice/averageLongPrice/taxLotAverageLongPrice are undocumented by Schwab; do not treat them as tax basis."},
 		func(ctx context.Context, in accountIn) ([]byte, error) {
 			return c.get(ctx, acct(in.AccountHash), toQuery(in, "accountHash"))
 		})
@@ -285,20 +328,82 @@ func registerAccountTools(s *mcp.Server, c *Client, cfg Config) {
 		})
 
 	add(s, &mcp.Tool{Name: "get_transactions", Annotations: readOnly(),
-		Description: "List transactions for an account. Defaults to the last 30 days and all transaction types."},
+		Description: "List transactions for an account. Defaults to the last 30 days and all transaction types. " +
+			"Any date range; the server splits it into ≤1-year Schwab requests (max 3000 per year). " +
+			"How far back history goes is not documented by Schwab. Transactions are not split-adjusted. " +
+			"There is no tax-lot or realized-gain data in the Schwab API."},
 		func(ctx context.Context, in transactionsIn) ([]byte, error) {
 			in.StartDate = orDefault(in.StartDate, month)
 			in.EndDate = orDefault(in.EndDate, 0)
 			if len(in.Types) == 0 {
 				in.Types = allTransactionTypes
 			}
-			return c.get(ctx, acct(in.AccountHash)+"/transactions", toQuery(in, "accountHash"))
+			p := acct(in.AccountHash) + "/transactions"
+			start, serr := time.Parse(time.RFC3339, in.StartDate)
+			end, eerr := time.Parse(time.RFC3339, in.EndDate)
+			if serr != nil || eerr != nil {
+				return nil, fmt.Errorf("startDate and endDate must be ISO-8601 like 2024-01-31T00:00:00.000Z: %w", errors.Join(serr, eerr))
+			}
+			// Each window is one Schwab call; keep long or mistyped ranges well under the 120 requests/min limit.
+			if end.After(start.AddDate(20, 0, 0)) {
+				return nil, fmt.Errorf("date range %s to %s is longer than 20 years", in.StartDate, in.EndDate)
+			}
+			// Schwab caps a request at 1 year and 3000 rows, so walk back in ≤364-day windows, newest first.
+			// ponytail: windows are fetched sequentially; parallelize if long ranges get slow (Schwab allows 120 requests/min).
+			all := []map[string]any{}
+			var warn []string
+			for e := end; ; {
+				s := e.Add(-364 * 24 * time.Hour)
+				if s.Before(start) {
+					s = start
+				}
+				w := in
+				w.StartDate = s.UTC().Format("2006-01-02T15:04:05.000Z")
+				w.EndDate = e.UTC().Format("2006-01-02T15:04:05.000Z")
+				b, err := c.get(ctx, p, toQuery(w, "accountHash"))
+				if err != nil {
+					return nil, err
+				}
+				var rows []map[string]any
+				if err := decodeNumbers(b, &rows); err != nil {
+					return nil, fmt.Errorf("transactions %s to %s: %w", w.StartDate, w.EndDate, err)
+				}
+				if len(rows) == 3000 && len(warn) == 0 {
+					warn = append(warn, "a window hit Schwab's 3000-transaction cap; results may be truncated")
+				}
+				for _, tx := range rows {
+					dropZeroFees(tx)
+				}
+				all = append(all, rows...)
+				// The whole merged list is held in memory, so stop before a dense multi-year
+				// account can grow it past what the caller could read anyway.
+				if len(all) >= maxTransactions {
+					warn = append(warn, fmt.Sprintf("stopped at %d transactions, back to %s; request an earlier range for the rest",
+						len(all), w.StartDate))
+					break
+				}
+				if !s.After(start) {
+					break
+				}
+				e = s.Add(-time.Millisecond)
+			}
+			b, err := encodeJSON(all)
+			if len(warn) > 0 {
+				b = append([]byte("WARNING: "+strings.Join(warn, "; ")+".\n"), b...)
+			}
+			return b, err
 		})
 
 	add(s, &mcp.Tool{Name: "get_transaction", Annotations: readOnly(),
 		Description: "Get one transaction by ID."},
 		func(ctx context.Context, in transactionIn) ([]byte, error) {
-			return c.get(ctx, acct(in.AccountHash)+"/transactions/"+url.PathEscape(in.TransactionID), nil)
+			b, err := c.get(ctx, acct(in.AccountHash)+"/transactions/"+url.PathEscape(in.TransactionID), nil)
+			var tx map[string]any
+			if err != nil || decodeNumbers(b, &tx) != nil {
+				return b, err
+			}
+			dropZeroFees(tx)
+			return encodeJSON(tx)
 		})
 
 	add(s, &mcp.Tool{Name: "get_user_preference", Annotations: readOnly(),
